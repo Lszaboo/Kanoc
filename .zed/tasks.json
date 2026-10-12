@@ -1,0 +1,65 @@
+// Project tasks configuration. See https://zed.dev/docs/tasks for documentation.
+//
+// Example:
+[
+  {
+    "label": "Build-Folder",
+    "command": "cmake -B build",
+    "shell": "system",
+
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+
+    "reveal_target": "dock",
+    "hide": "on_success",
+    "show_summary": true,
+    "show_command": true,
+
+    "save": "none",
+  },
+  {
+    "label": "Compile-App",
+    "command": "cmake --build build",
+    "shell": "system",
+
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+
+    "reveal_target": "dock",
+    "hide": "on_success",
+    "show_summary": true,
+    "show_command": true,
+
+    "save": "none",
+  },
+  {
+    "label": "Compile-And-Run",
+    "command": "cmake --build build; ./build/VulkanApp",
+    "shell": "system",
+
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+    "reveal": "always",
+    "reveal_target": "center",
+    "hide": "on_success",
+    "show_summary": true,
+    "show_command": true,
+
+    "save": "none",
+  },
+  {
+    "label": "Run-Executable",
+    "command": "./build/VulkanApp",
+    "shell": "system",
+
+    "use_new_terminal": false,
+    "allow_concurrent_runs": false,
+
+    "reveal_target": "dock",
+    "hide": "never",
+    "show_summary": true,
+    "show_command": true,
+
+    "save": "none",
+  }
+]
