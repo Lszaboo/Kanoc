@@ -1,5 +1,5 @@
-#include "app.hpp"
-#include "app/harness.hpp"
+#include "kanoc/app.hpp"
+#include "kanoc/harness.hpp"
 
 int main(int argc, char **argv)
 {

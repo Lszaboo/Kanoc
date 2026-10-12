@@ -1,4 +1,4 @@
-#include "vkwrappers/textures.hpp"
+#include "kanoc/textures.hpp"
 
 #include <cstring>
 #include <glm/ext/vector_int2.hpp>
@@ -7,10 +7,10 @@
 #include <ktxvulkan.h>
 #include <vulkan/vulkan_core.h>
 
-#include "chk.hpp"
-#include "vkwrappers/devices.hpp"
-#include "vkwrappers/buffers.hpp"
-#include "vkwrappers/cmdbufs.hpp"
+#include "kanoc/chk.hpp"
+#include "kanoc/devices.hpp"
+#include "kanoc/buffers.hpp"
+#include "kanoc/cmdbufs.hpp"
 
 // SampledTexture
 

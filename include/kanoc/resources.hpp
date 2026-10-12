@@ -1,14 +1,14 @@
 #pragma once
 
-#include "cmdhelpers.hpp"
-#include "vkwrappers/buffers.hpp"
-#include "vkwrappers/descriptors.hpp"
-#include "vkwrappers/devices.hpp"
-#include "vkwrappers/pipelines.hpp"
-#include "vkwrappers/shaders.hpp"
-#include "vkwrappers/textures.hpp"
-#include "namedresource.hpp"
-#include "vkwrappers/uniforms.hpp"
+#include "kanoc/cmdhelpers.hpp"
+#include "kanoc/buffers.hpp"
+#include "kanoc/descriptors.hpp"
+#include "kanoc/devices.hpp"
+#include "kanoc/pipelines.hpp"
+#include "kanoc/shaders.hpp"
+#include "kanoc/textures.hpp"
+#include "kanoc/namedresource.hpp"
+#include "kanoc/uniforms.hpp"
 #include <algorithm>
 #include <cassert>
 #include <glm/ext/vector_int2.hpp>

@@ -2,8 +2,8 @@
 
 #include <vulkan/vulkan_core.h>
 
-#include "vkwrap.hpp"
-#include "vkwrappers/devices.hpp"
+#include "kanoc/vkwrap.hpp"
+#include "kanoc/devices.hpp"
 
 class OneTimeCB{
     public:

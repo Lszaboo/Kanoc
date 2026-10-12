@@ -15,25 +15,25 @@
 #include <ktx.h>
 #include <ktxvulkan.h>
 
-#include "resources/namedresource.hpp"
+#include "kanoc/namedresource.hpp"
 
 #include <array>
 
-#include "app/harness.hpp"
-#include "chk.hpp"
-#include "resources/resources.hpp"
-#include "vkwrappers/buffers.hpp"
-#include "vkwrappers/descriptors.hpp"
-#include "vkwrappers/devices.hpp"
-#include "vkwrappers/imagebarriers.hpp"
-#include "vkwrappers/pipelines.hpp"
-#include "vkwrappers/shaders.hpp"
-#include "vkwrappers/textures.hpp"
-#include "vkwrappers/uniforms.hpp"
-#include "vkwrappers/vkwrap.hpp"
-#include "app/glfw_module.hpp"
-#include "app/vk_module.hpp"
-#include "app/imgui_module.hpp"
+#include "kanoc/harness.hpp"
+#include "kanoc/chk.hpp"
+#include "resources.hpp"
+#include "buffers.hpp"
+#include "descriptors.hpp"
+#include "devices.hpp"
+#include "imagebarriers.hpp"
+#include "pipelines.hpp"
+#include "shaders.hpp"
+#include "textures.hpp"
+#include "uniforms.hpp"
+#include "vkwrap.hpp"
+#include "glfw_module.hpp"
+#include "vk_module.hpp"
+#include "imgui_module.hpp"
 
 struct CommandRecorders{
     VkCommandBuffer cb = {VK_NULL_HANDLE};

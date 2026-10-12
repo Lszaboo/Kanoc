@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vkwrappers/devices.hpp"
+#include "kanoc/devices.hpp"
 #include <cstdint>
 #include <vulkan/vulkan_core.h>
 #include <vk_mem_alloc.h>

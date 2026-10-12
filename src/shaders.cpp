@@ -1,5 +1,5 @@
-#include "vkwrappers/shaders.hpp"
-#include "chk.hpp"
+#include "kanoc/shaders.hpp"
+#include "kanoc/chk.hpp"
 
 #include <array>
 #include <string>

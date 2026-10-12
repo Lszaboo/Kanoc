@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <vector>
 
-#include "vkwrappers/devices.hpp"
+#include "kanoc/devices.hpp"
 
 class GLFWModule{
     public:

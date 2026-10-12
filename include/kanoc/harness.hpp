@@ -1,8 +1,8 @@
 #pragma once
 
-#include "app/glfw_module.hpp"
-#include "app/imgui_module.hpp"
-#include "app/vk_module.hpp"
+#include "kanoc/glfw_module.hpp"
+#include "kanoc/imgui_module.hpp"
+#include "kanoc/vk_module.hpp"
 
 /*
  * Harness for Apps.

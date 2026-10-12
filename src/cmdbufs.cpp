@@ -1,7 +1,7 @@
-#include "vkwrappers/cmdbufs.hpp"
+#include "kanoc/cmdbufs.hpp"
 
-#include "chk.hpp"
-#include "vkwrappers/devices.hpp"
+#include "kanoc/chk.hpp"
+#include "kanoc/devices.hpp"
 
 void OneTimeCB::initInBegin(FullDevice& vk, VkCommandPool& cbpool){
     VkFenceCreateInfo fenceOneTimeCI{

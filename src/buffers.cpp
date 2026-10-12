@@ -1,10 +1,10 @@
-#include "vkwrappers/buffers.hpp"
+#include "kanoc/buffers.hpp"
 
 #include <cstdint>
 #include <cstring>
 
-#include "chk.hpp"
-#include "vkwrappers/devices.hpp"
+#include "kanoc/chk.hpp"
+#include "kanoc/devices.hpp"
 
 void Buffer::Destroy(FullDevice &vk){
     vmaDestroyBuffer(vk.vma.allocator, handle, allocation);

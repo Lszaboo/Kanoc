@@ -1,4 +1,4 @@
-#include "glfw_module.hpp"
+#include "kanoc/glfw_module.hpp"
 #include <cassert>
 #include <iostream>
 

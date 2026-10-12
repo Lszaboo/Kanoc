@@ -105,7 +105,7 @@ add_executable(VulkanApp
 
 # Search for headers here
 target_include_directories(VulkanApp PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/
 )
 
 # link the whole app

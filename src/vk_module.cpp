@@ -1,6 +1,6 @@
-#include "vk_module.hpp"
-#include "app/glfw_module.hpp"
-#include "chk.hpp"
+#include "kanoc/vk_module.hpp"
+#include "kanoc/glfw_module.hpp"
+#include "kanoc/chk.hpp"
 #include <GLFW/glfw3.h>
 #include <cassert>
 #include <cstdint>
@@ -16,11 +16,11 @@
 #include <string>
 #include <iostream>
 
-#include "cmdhelpers.hpp"
-#include "debug.hpp"
-#include "vkwrappers/dynamicrendering.hpp"
-#include "vkwrappers/imagebarriers.hpp"
-#include "vkwrappers/textures.hpp"
+#include "kanoc/cmdhelpers.hpp"
+#include "kanoc/debug.hpp"
+#include "kanoc/dynamicrendering.hpp"
+#include "kanoc/imagebarriers.hpp"
+#include "kanoc/textures.hpp"
 
 void VkModule::Init(GLFWModule &glfw){
     glfw.fillRequiredExtensions(vk.extensions);

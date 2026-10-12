@@ -1,8 +1,9 @@
 #pragma once
 
-#include "debug.hpp"
-#include "vkwrappers/buffers.hpp"
-#include "vkwrappers/devices.hpp"
+#include "kanoc/debug.hpp"
+#include "kanoc/buffers.hpp"
+#include "kanoc/devices.hpp"
+#include "textures.hpp"
 #include <vulkan/vulkan_core.h>
 #include <vk_mem_alloc.h>
 

@@ -1,6 +1,6 @@
-#include "vkwrappers/pipelines.hpp"
-#include "chk.hpp"
-#include "vkwrappers/devices.hpp"
+#include "kanoc/pipelines.hpp"
+#include "kanoc/chk.hpp"
+#include "kanoc/devices.hpp"
 #include <vulkan/vulkan_core.h>
 
 GraphicsPipeline GraphicsPipeline::Build(FullDevice& vk, VkPipelineLayoutCreateInfo& layoutci, VkGraphicsPipelineCreateInfo& pipelineci){

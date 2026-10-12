@@ -1,4 +1,4 @@
-#include "vkwrappers/imagebarriers.hpp"
+#include "kanoc/imagebarriers.hpp"
 #include "vulkan/vulkan_core.h"
 #include <cstdint>
 

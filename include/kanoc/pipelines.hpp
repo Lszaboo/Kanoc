@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vkwrappers/devices.hpp"
+#include "kanoc/devices.hpp"
 #include "vulkan/vulkan_core.h"
 
 class GraphicsPipeline{

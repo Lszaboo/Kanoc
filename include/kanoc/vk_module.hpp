@@ -18,14 +18,14 @@
 #include <vector>
 #include <array>
 
-#include "vkwrappers/devices.hpp"
-#include "vkwrappers/dynamicrendering.hpp"
-#include "vkwrappers/imagebarriers.hpp"
-#include "vkwrappers/textures.hpp"
-#include "vkwrappers/shaders.hpp"
-#include "vkwrappers/vkwrap.hpp"
+#include "kanoc/devices.hpp"
+#include "kanoc/dynamicrendering.hpp"
+#include "kanoc/imagebarriers.hpp"
+#include "kanoc/textures.hpp"
+#include "kanoc/shaders.hpp"
+#include "kanoc/vkwrap.hpp"
 
-#include "app/glfw_module.hpp"
+#include "kanoc/glfw_module.hpp"
 
 struct InitStack{
     int pdeviceID = 0;

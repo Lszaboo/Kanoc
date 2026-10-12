@@ -1,7 +1,7 @@
-#include "vkwrappers/descriptors.hpp"
-#include "chk.hpp"
-#include "debug.hpp"
-#include "vkwrappers/devices.hpp"
+#include "kanoc/descriptors.hpp"
+#include "kanoc/chk.hpp"
+#include "kanoc/debug.hpp"
+#include "kanoc/devices.hpp"
 #include <cstddef>
 #include <cstdint>
 

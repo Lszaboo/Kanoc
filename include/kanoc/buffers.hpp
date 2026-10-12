@@ -13,7 +13,7 @@
 
 #include <tiny_obj_loader.h>
 
-#include "vkwrappers/devices.hpp"
+#include "kanoc/devices.hpp"
 
 struct Buffer{
     VkBuffer handle = {VK_NULL_HANDLE};

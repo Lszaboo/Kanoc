@@ -2,7 +2,7 @@
 
 #include "slang/slang.h"
 #include "slang/slang-com-ptr.h"
-#include "vkwrappers/devices.hpp"
+#include "kanoc/devices.hpp"
 #include <vulkan/vulkan_core.h>
 
 void DestroyVkHandle(FullDevice& vk, VkShaderModule& shader);

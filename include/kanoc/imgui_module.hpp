@@ -2,8 +2,8 @@
 
 #include "imgui.h"
 #include <vulkan/vulkan_core.h>
-#include "app/glfw_module.hpp"
-#include "app/vk_module.hpp"
+#include "kanoc/glfw_module.hpp"
+#include "kanoc/vk_module.hpp"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
 

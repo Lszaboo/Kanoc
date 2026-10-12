@@ -10,10 +10,10 @@
 #include <ktx.h>
 #include <ktxvulkan.h>
 
-#include "vkwrap.hpp"
-#include "vkwrappers/devices.hpp"
-#include "vkwrappers/buffers.hpp"
-#include "vkwrappers/cmdbufs.hpp"
+#include "kanoc/vkwrap.hpp"
+#include "kanoc/devices.hpp"
+#include "kanoc/buffers.hpp"
+#include "kanoc/cmdbufs.hpp"
 
 class SamplerTexture {
     public:
