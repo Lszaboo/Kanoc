@@ -3,6 +3,7 @@
 #include <cstdint>
 
 void ImageBarrierCommander::Add(VkImageMemoryBarrier2&& rbarrier){
+    rbarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
     barriers.push_back(std::move(rbarrier));
 }
 

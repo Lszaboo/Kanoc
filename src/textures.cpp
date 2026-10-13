@@ -11,6 +11,7 @@
 #include "kanoc/devices.hpp"
 #include "kanoc/buffers.hpp"
 #include "kanoc/cmdbufs.hpp"
+#include "kanoc/imagebarriers.hpp"
 
 // SampledTexture
 
@@ -129,23 +130,20 @@ void SamplerTexture::createImageAndView(FullDevice& vk){
 void SamplerTexture::recordStagingCopyCommands(FullDevice& vk, OneTimeCB& cb, StagingBuffer& imgStgBuf, ktxTexture* ktxTexture){
     // fst command
     // change texture layout from previously undefined.
-    VkImageMemoryBarrier2 barrierTexImage{
-        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-        .srcStageMask = VK_PIPELINE_STAGE_2_NONE,
-        .srcAccessMask = VK_ACCESS_2_NONE,
-        .dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
-        .dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
-        .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-        .newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, // we will transfer data to this image.
-        .image = this->image,
-        .subresourceRange = { .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = ktxTexture->numLevels, .layerCount = 1 }
-    };
-    VkDependencyInfo barrierTexInfo{
-        .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
-        .imageMemoryBarrierCount = 1,
-        .pImageMemoryBarriers = &barrierTexImage
-    };
-    vkCmdPipelineBarrier2(cb.handle, &barrierTexInfo);
+    ImageBarrierCommander ibc;
+    ibc.Add(
+        {
+            .srcStageMask = VK_PIPELINE_STAGE_2_NONE,
+            .srcAccessMask = VK_ACCESS_2_NONE,
+            .dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+            .dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, // we will transfer data to this image.
+            .image = this->image,
+            .subresourceRange = { .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = ktxTexture->numLevels, .layerCount = 1 }
+        }
+    );
+    ibc.RecordAndClearCommands(cb.handle);
 
     // snd commands
     // copy mip levels from buffers to image
@@ -166,19 +164,19 @@ void SamplerTexture::recordStagingCopyCommands(FullDevice& vk, OneTimeCB& cb, St
 
     // thrd command
     // change image layout again to be read-only from shader.
-    VkImageMemoryBarrier2 barrierTexRead{
-        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-        .srcStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT,
-        .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-        .dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-        .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
-        .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        .newLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, // read only from shader.
-        .image = this->image,
-        .subresourceRange = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = ktxTexture->numLevels, .layerCount = 1 }
-    };
-    barrierTexInfo.pImageMemoryBarriers = &barrierTexRead;
-    vkCmdPipelineBarrier2(cb.handle, &barrierTexInfo);
+    ibc.Add(
+        {
+            .srcStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT,
+            .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+            .dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+            .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
+            .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            .newLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL, // read only from shader.
+            .image = this->image,
+            .subresourceRange = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = ktxTexture->numLevels, .layerCount = 1 }
+        }
+    );
+    ibc.RecordAndClearCommands(cb.handle);
 }
 
 void SamplerTexture::createSampler(FullDevice& vk){
