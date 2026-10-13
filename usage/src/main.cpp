@@ -1,4 +1,4 @@
-#include "kanoc/app.hpp"
+#include "app.hpp"
 #include "kanoc/harness.hpp"
 
 int main(int argc, char **argv)

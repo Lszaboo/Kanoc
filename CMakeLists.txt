@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-project(VulkanApp LANGUAGES CXX)
+project(Kanoc LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -81,35 +81,35 @@ macro(setup_tinyobjloader)
   FetchContent_MakeAvailable(tinyobjloader)
 endmacro()
 
-macro(copy_to_build TRGT FLDR)
-add_custom_command(TARGET ${TRGT} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
-        ${CMAKE_SOURCE_DIR}/${FLDR}
-        $<TARGET_FILE_DIR:${TRGT}>/${FLDR}
-)
-endmacro()
+# macro(copy_to_build TRGT FLDR)
+#   add_custom_command(TARGET ${TRGT} POST_BUILD
+#     COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
+#         ${CMAKE_SOURCE_DIR}/${FLDR}
+#         $<TARGET_FILE_DIR:${TRGT}>/${FLDR}
+#   )
+# endmacro()
 
 setup_imgui()
 setup_vma()
 setup_tinyobjloader()
 
-# Find files in src/
+# Find library *.cpp files in src/
 file(GLOB_RECURSE SRC_FILES
   "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
 )
 
-# Compile theese source files.
-add_executable(VulkanApp
-    ${SRC_FILES}
+# Assemble library *.cpp files.
+add_library(Kanoc STATIC
+  ${SRC_FILES}
 )
 
-# Search for headers here
-target_include_directories(VulkanApp PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/
+# Search for library headers here.
+target_include_directories(Kanoc PUBLIC
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/
 )
 
-# link the whole app
-target_link_libraries(VulkanApp PRIVATE
+# Link the library with it's dependencies.
+target_link_libraries(Kanoc PUBLIC
     Vulkan::Vulkan
     glm::glm
     glfw
@@ -120,8 +120,10 @@ target_link_libraries(VulkanApp PRIVATE
     slang::slang
 )
 
+add_library(Kanoc::Kanoc ALIAS Kanoc)
+
 # copy shaders next to app
-copy_to_build(VulkanApp shaders)
+# copy_to_build(VulkanApp shaders)
 
 # copy assets next to app
-copy_to_build(VulkanApp assets)
+# copy_to_build(VulkanApp assets)

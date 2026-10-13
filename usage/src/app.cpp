@@ -1,4 +1,4 @@
-#include "kanoc/app.hpp"
+#include "app.hpp"
 #include "kanoc/harness.hpp"
 #include "kanoc/vk_module.hpp"
 #include "kanoc/chk.hpp"
@@ -311,10 +311,10 @@ void IndexVK::EndRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, 
 
 
 void DuckVk::Init(VkModule& vkmod, IndexVK& indexVk, ResourceOwners &resources){
-    model = resources.models.Add("Duck_obj", ObjModel::Build(vkmod.vk, "assets/duck/duck.obj"));
+    model = resources.models.Add("Duck_obj", ObjModel::Build(vkmod.vk, "assets/duck.obj"));
 
     auto duck_texture = SamplerTexture();
-    duck_texture.InitFromFile(vkmod.vk, vkmod.commandPool, vkmod.queue, "assets/duck/duck.ktx");
+    duck_texture.InitFromFile(vkmod.vk, vkmod.commandPool, vkmod.queue, "assets/duck.ktx");
     textures[0] = resources.samplertextures.Add("Duck_Texture", std::move(duck_texture));
 
     for (auto i = 0; i < VkModule::maxFramesInFlight; i++) {
