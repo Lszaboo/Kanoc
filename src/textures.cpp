@@ -2,6 +2,7 @@
 
 #include <cstring>
 #include <glm/ext/vector_int2.hpp>
+#include <slang.h>
 #include <vector>
 #include <ktx.h>
 #include <ktxvulkan.h>
@@ -181,6 +182,15 @@ void SamplerTexture::recordStagingCopyCommands(FullDevice& vk, OneTimeCB& cb, St
 
 void SamplerTexture::createSampler(FullDevice& vk){
     chk(vkCreateSampler(vk.ldevice.handle, &samplerci, nullptr, &sampler));
+}
+
+void SamplerTexture::Resize(FullDevice &vk, glm::ivec2& size){
+    vkDestroyImageView(vk.ldevice.handle, view, nullptr);
+    vmaDestroyImage(vk.vma.allocator, image, allocation);
+
+    imageci.extent = { .width = static_cast<uint32_t>(size.x), .height = static_cast<uint32_t>(size.y), .depth = 1 };
+
+    createImageAndView(vk);
 }
 
 // BasicTexture

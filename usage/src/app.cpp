@@ -202,7 +202,25 @@ void IndexVK::InitCombinerPipeline(VkModule& vkmod, ResourceOwners& resources){
 }
 
 void IndexVK::Resize(VkModule& vkmod){
+    // Redo Depth and Color textures.
     depth.resource->Resize(vkmod.vk, vkmod.windowSize);
+    coltex.resource->Resize(vkmod.vk, vkmod.windowSize);
+
+    // Redo just the Descriptor Set, so that it points to the correct resources.
+    VkDescriptorImageInfo imageInfo{
+        .sampler = coltex.resource->sampler,
+        .imageView = coltex.resource->view, // This now points to new view.
+        .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL
+    };
+    VkWriteDescriptorSet writeDescSet{
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = combinerDescriptors.resource->sets[0], // Write to set 0, again.
+        .dstBinding = 0, // The set is bound to 0 in shader.
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, // conform to the type at binding
+        .pImageInfo = &imageInfo
+    };
+    combinerDescriptors.resource->WriteSet(vkmod.vk, writeDescSet);
 }
 
 void IndexVK::BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, uint32_t& nextsscimage, SurfaceSwapChain& ssc, DepthTexture& sscdepth){
@@ -698,6 +716,7 @@ void App::Play(Harness<App>::Modules& m){
         pollEvents(m);
 
         if (updateSwapchain) {
+            chk(vkDeviceWaitIdle(m.vkmod.vk.ldevice.handle));
             m.vkmod.recreateSwapchains(m.glfwmod);
             m.guimod.recreateImGui(m.vkmod);
             indexVk.Resize(m.vkmod);

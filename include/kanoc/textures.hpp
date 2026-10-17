@@ -30,6 +30,8 @@ class SamplerTexture {
         void InitColorReadWrite(FullDevice& vk, glm::ivec2& size);
         void Destroy(FullDevice& vk);
 
+        void Resize(FullDevice& vk, glm::ivec2& size);
+
     protected:
         void createImageAndView(FullDevice& vk);
         void recordStagingCopyCommands(FullDevice& vk, OneTimeCB& cb, StagingBuffer& imgStgBuf, ktxTexture* ktxTexture);
