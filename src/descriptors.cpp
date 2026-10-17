@@ -16,6 +16,7 @@ Descriptors Descriptors::Build(VkDescriptorPool pool){
 }
 
 void Descriptors::WriteSet(FullDevice& vk, VkWriteDescriptorSet& setdata){
+    setdata.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
     vkUpdateDescriptorSets(vk.ldevice.handle, 1, &setdata, 0, nullptr);
 }
 

@@ -102,7 +102,6 @@ void IndexVK::InitDescriptors(VkModule& vkmod, ResourceOwners& resources){
         .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL
     };
     VkWriteDescriptorSet writeDescSet{
-        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
         .dstSet = combinerDescriptors.resource->sets[0],
         .dstBinding = 0,
         .descriptorCount = 1,
@@ -213,7 +212,6 @@ void IndexVK::Resize(VkModule& vkmod){
         .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL
     };
     VkWriteDescriptorSet writeDescSet{
-        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
         .dstSet = combinerDescriptors.resource->sets[0], // Write to set 0, again.
         .dstBinding = 0, // The set is bound to 0 in shader.
         .descriptorCount = 1,
@@ -388,7 +386,6 @@ void DuckVk::InitDescriptors(VkModule &vkmod, ResourceOwners& resources){
     }
 
     VkWriteDescriptorSet writeDescSet{
-        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
         .dstSet = descriptorpool.resource->sets[0],
         .dstBinding = 0,
         .descriptorCount = static_cast<uint32_t>(imageinfos.size()),
