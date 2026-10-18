@@ -3,10 +3,13 @@
 #include <cstdint>
 
 void DynamicRenderingCommander::Add(VkRenderingAttachmentInfo&& rattachment){
+    rattachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
     attachments.push_back(std::move(rattachment));
 }
 
 void DynamicRenderingCommander::BeginDynamicRendering(VkCommandBuffer& cb, glm::ivec2& renderArea){
+    depth.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+
     VkRenderingInfo renderingInfo{
         .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
         .renderArea{.extent{.width = static_cast<uint32_t>(renderArea.x), .height = static_cast<uint32_t>(renderArea.y) }},

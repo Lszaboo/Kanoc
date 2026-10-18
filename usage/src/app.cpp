@@ -257,7 +257,6 @@ void IndexVK::BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize
     // setup dynamic rendering info
     cmds.drc.Add(
         {
-            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
             .imageView = ssc.views[nextsscimage],
             .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
             .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
@@ -266,7 +265,6 @@ void IndexVK::BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize
         }
     );
     cmds.drc.depth = {
-        .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
         .imageView = sscdepth.view,
         .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
         .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
@@ -528,7 +526,6 @@ void DuckVk::BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize,
 
     cmds.drc.Add(
         {
-            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
             .imageView = coltex.view,
             .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
             .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
@@ -537,7 +534,6 @@ void DuckVk::BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize,
         }
     );
     cmds.drc.depth = {
-        .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
         .imageView = coldepth.view,
         .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
         .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
