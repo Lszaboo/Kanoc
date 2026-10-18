@@ -3,6 +3,7 @@
 #include "kanoc/glfw_module.hpp"
 #include "kanoc/imgui_module.hpp"
 #include "kanoc/vk_module.hpp"
+#include <filesystem>
 
 /*
  * Harness for Apps.
@@ -18,10 +19,13 @@ class Harness{
             ImGuiModule guimod;
         };
 
-        void Init(){
+        void Init(const std::string& argvzero){
+            auto dir = std::filesystem::absolute(argvzero).parent_path();
+            std::string workingPath = dir.string();
+
             m.glfwmod.Init();
             m.vkmod.Init(m.glfwmod);
-            m.guimod.Init(m.glfwmod, m.vkmod);
+            m.guimod.Init(m.glfwmod, m.vkmod, workingPath);
 
             app = new AppT();
             app->Init(m);

@@ -43,8 +43,11 @@ target_link_libraries(DuckApp
     Kanoc::Kanoc
 )
 
+# Copy folders required by Kanoc.
+kanoc_copy_all_to_build(DuckApp)
+
 # copy shaders next to DuckApp.
-copy_to_build(DuckApp shaders)
+kanoc_copy(${CMAKE_CURRENT_SOURCE_DIR} DuckApp shaders)
 
 # Copy assets next to DuckApp.
-copy_to_build(DuckApp assets)
+kanoc_copy(${CMAKE_CURRENT_SOURCE_DIR} DuckApp assets)

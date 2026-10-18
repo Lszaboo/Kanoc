@@ -6,7 +6,7 @@
 #include "imgui_impl_vulkan.h"
 #include <vulkan/vulkan_core.h>
 
-void ImGuiModule::Init(GLFWModule &glfw, VkModule &vk){
+void ImGuiModule::Init(GLFWModule &glfw, VkModule &vk, const std::string& workingPath){
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
@@ -36,6 +36,11 @@ void ImGuiModule::Init(GLFWModule &glfw, VkModule &vk){
     };
     ImGui_ImplVulkan_Init(&initInfo);
 
+    std::string textFontPath = workingPath + "/fonts/Roboto.ttf";
+    textFont = io.Fonts->AddFontFromFileTTF(textFontPath.c_str(),16);
+
+    std::string iconFontPath = workingPath + "/fonts/MaterialSymbolsRounded.ttf";
+    iconFont = io.Fonts->AddFontFromFileTTF(iconFontPath.c_str(),24);
 }
 
 void ImGuiModule::initDesriptorPool(VkModule &vk){
@@ -63,9 +68,12 @@ void ImGuiModule::beginFrame(){
 
 void ImGuiModule::updateFrame(){
     if (demo) {
-        ImGui::Begin("Demo", &demo);
-        ImGui::Text("A demo window.");
+        ImGui::PushFont(textFont);
+        if (ImGui::Begin("Demo", &demo)){
+            ImGui::Text("A demo window.");
+        }
         ImGui::End();
+        ImGui::PopFont();
     }
 }
 

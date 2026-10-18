@@ -10,7 +10,7 @@ int main(int argc, char **argv)
 
     auto harnessedapp = Harness<App>();
 
-    harnessedapp.Init();
+    harnessedapp.Init(argv[0]);
     harnessedapp.Play();
     harnessedapp.Destroy();
 

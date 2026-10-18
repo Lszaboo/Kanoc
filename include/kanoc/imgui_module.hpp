@@ -1,6 +1,7 @@
 #pragma once
 
 #include "imgui.h"
+#include <string>
 #include <vulkan/vulkan_core.h>
 #include "kanoc/glfw_module.hpp"
 #include "kanoc/vk_module.hpp"
@@ -15,7 +16,7 @@ class ImGuiModule{
         bool demo = true;
 
         // functions
-        void Init(GLFWModule &glfw, VkModule &vk);
+        void Init(GLFWModule &glfw, VkModule &vk, const std::string& workingPath);
         void initDesriptorPool(VkModule &vk);
 
         void beginFrame();
@@ -24,4 +25,8 @@ class ImGuiModule{
         void recreateImGui(VkModule &vk);
 
         void Destroy(VkModule &vk);
+
+    protected:
+        ImFont* textFont;
+        ImFont* iconFont;
 };

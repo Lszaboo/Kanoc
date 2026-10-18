@@ -81,14 +81,6 @@ macro(setup_tinyobjloader)
   FetchContent_MakeAvailable(tinyobjloader)
 endmacro()
 
-# macro(copy_to_build TRGT FLDR)
-#   add_custom_command(TARGET ${TRGT} POST_BUILD
-#     COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
-#         ${CMAKE_SOURCE_DIR}/${FLDR}
-#         $<TARGET_FILE_DIR:${TRGT}>/${FLDR}
-#   )
-# endmacro()
-
 setup_imgui()
 setup_vma()
 setup_tinyobjloader()
@@ -122,8 +114,23 @@ target_link_libraries(Kanoc PUBLIC
 
 add_library(Kanoc::Kanoc ALIAS Kanoc)
 
-# copy shaders next to app
-# copy_to_build(VulkanApp shaders)
+# Generic copy command.
+# Copy from SRCDIR/FLDR to TRGT/FLDR
+macro(kanoc_copy SRCDIR TRGT FLDR)
+  add_custom_command(TARGET ${TRGT} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
+        ${SRCDIR}/${FLDR}
+        $<TARGET_FILE_DIR:${TRGT}>/${FLDR}
 
-# copy assets next to app
-# copy_to_build(VulkanApp assets)
+    COMMENT "Copied from ${SRCDIR}/${FLDR} to ${TRGT}-${FLDR}!"
+  )
+endmacro()
+
+# Save the directory of Kanoc.
+set(KANOC_DIR "${CMAKE_CURRENT_SOURCE_DIR}" CACHE INTERNAL "")
+
+# Call from App CMake, to copy everything needed for Kanoc to work.
+function(kanoc_copy_all_to_build TRGT)
+  # Copy fonts to target's build.
+  kanoc_copy(${KANOC_DIR} ${TRGT} fonts)
+endfunction()
