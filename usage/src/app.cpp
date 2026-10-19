@@ -53,9 +53,9 @@ void IndexVK::Init(VkModule& vkmod, ResourceOwners& resources){
     ibc.RecordAndClearCommands(cb.handle);
     cb.End(vkmod.vk, vkmod.queue);
 
-    auto index_texture = IndexTexture();
-    index_texture.Init(vkmod.vk, vkmod.windowSize);
-    idtex = resources.idxtextures.Add("Index_Index_Texture", std::move(index_texture));
+    auto index_texture = SamplerTexture();
+    index_texture.InitIDReadWrite(vkmod.vk, vkmod.windowSize);
+    idtex = resources.samplertextures.Add("Index_Index_Texture", std::move(index_texture));
 
     VkShaderModule combiner_shader = {VK_NULL_HANDLE};
     vkmod.slang.LoadAndCompile(vkmod.vk, "shaders/combiner.slang", combiner_shader);
@@ -204,6 +204,7 @@ void IndexVK::Resize(VkModule& vkmod){
     // Redo Depth and Color textures.
     depth.resource->Resize(vkmod.vk, vkmod.windowSize);
     coltex.resource->Resize(vkmod.vk, vkmod.windowSize);
+    idtex.resource->Resize(vkmod.vk, vkmod.windowSize);
 
     // Redo just the Descriptor Set, so that it points to the correct resources.
     VkDescriptorImageInfo imageInfo{
@@ -488,7 +489,7 @@ void DuckVk::InitPipeline(VkModule &vkmod, IndexVK& indexVk, ResourceOwners &res
     pipeline = resources.pipelines.Add("Duck_Pipeline", pb.Build(vkmod.vk));
 }
 
-void DuckVk::BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, SamplerTexture& coltex, DepthTexture& coldepth, IndexTexture& idtex){
+void DuckVk::BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, SamplerTexture& coltex, DepthTexture& coldepth, SamplerTexture& idtex){
     cmds.ibc.Add(
         {
             .srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,

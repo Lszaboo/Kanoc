@@ -3,12 +3,14 @@
 #include <cstring>
 #include <glm/ext/vector_int2.hpp>
 #include <slang.h>
+#include <string>
 #include <vector>
 #include <ktx.h>
 #include <ktxvulkan.h>
 #include <vulkan/vulkan_core.h>
 
 #include "kanoc/chk.hpp"
+#include "kanoc/cmdhelpers.hpp"
 #include "kanoc/devices.hpp"
 #include "kanoc/buffers.hpp"
 #include "kanoc/cmdbufs.hpp"
@@ -88,6 +90,54 @@ void SamplerTexture::InitColorReadWrite(FullDevice& vk, glm::ivec2& size){
         .tiling = VK_IMAGE_TILING_OPTIMAL,
         .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, // if read from as well.
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE, // image is owned by one queue family.
+        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+    };
+    allocci = {
+        .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
+        .usage = VMA_MEMORY_USAGE_AUTO
+    };
+    viewci = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        .viewType = VK_IMAGE_VIEW_TYPE_2D,
+        .format = imageci.format,
+        .subresourceRange = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = imageci.mipLevels, .layerCount = 1 }
+    };
+    createImageAndView(vk);
+
+    samplerci = {
+        .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+        .magFilter = VK_FILTER_LINEAR,
+        .minFilter = VK_FILTER_LINEAR,
+        .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+        .addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+        .anisotropyEnable = VK_FALSE,
+        .maxLod = 0.0f,
+    };
+    createSampler(vk);
+}
+
+void SamplerTexture::InitIDReadWrite(FullDevice &vk, glm::ivec2 &size){
+    std::vector<VkFormat> formats = {VK_FORMAT_R32_UINT};
+    VkFormat format = BasicTexture::supportedFormat(vk, formats, VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT);
+    chk(format);
+
+    imageci = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+        .imageType = VK_IMAGE_TYPE_2D,
+        .format = format,
+        .extent = {
+            .width = static_cast<uint32_t>(size.x),
+            .height = static_cast<uint32_t>(size.y),
+            .depth = 1,
+        },
+        .mipLevels = 1,
+        .arrayLayers = 1,
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .tiling = VK_IMAGE_TILING_OPTIMAL,
+        .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, // if read from as well.
+        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
         .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
     };
     allocci = {
@@ -290,46 +340,6 @@ void ColorTexture::Init(FullDevice &vk, glm::ivec2& size){
         .tiling = VK_IMAGE_TILING_OPTIMAL,
         .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, // if read from as well.
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE, // image is owned by one queue family.
-        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-    };
-
-    VmaAllocationCreateInfo allocci{
-        .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
-        .usage = VMA_MEMORY_USAGE_AUTO
-    };
-
-    VkImageViewCreateInfo viewci = {
-        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-        .viewType = VK_IMAGE_VIEW_TYPE_2D,
-        .format = imageci.format,
-        .subresourceRange = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = imageci.mipLevels, .layerCount = 1 }
-    };
-
-    BasicTexture::createImageAndView(vk, imageci, allocci, viewci);
-}
-
-// IndexTexture
-
-void IndexTexture::Init(FullDevice& vk, glm::ivec2& size){
-    std::vector<VkFormat> formats = {VK_FORMAT_R32_UINT};
-    VkFormat format = BasicTexture::supportedFormat(vk, formats, VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT);
-    chk(format);
-
-    VkImageCreateInfo imageci = {
-        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-        .imageType = VK_IMAGE_TYPE_2D,
-        .format = format,
-        .extent = {
-            .width = static_cast<uint32_t>(size.x),
-            .height = static_cast<uint32_t>(size.y),
-            .depth = 1,
-        },
-        .mipLevels = 1,
-        .arrayLayers = 1,
-        .samples = VK_SAMPLE_COUNT_1_BIT,
-        .tiling = VK_IMAGE_TILING_OPTIMAL,
-        .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, // if read from as well.
-        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
         .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
     };
 

@@ -45,7 +45,7 @@ class IndexVK{
     public:
         Named<DepthTexture*> depth; // Depth for the scene.
         Named<SamplerTexture*> coltex; // Color Texture of the scene.
-        Named<IndexTexture*> idtex; // Index of objects is rendered into this texture.
+        Named<SamplerTexture*> idtex; // Index of objects is rendered into this texture.
 
         Named<VkShaderModule> combinerShader;
         Named<VkDescriptorSetLayout> combinerDescriptorLayout;
@@ -87,7 +87,7 @@ class DuckVk{
         std::array<Named<ShaderDataBuffer*>, VkModule::maxFramesInFlight> uniforms;
 
         void Init(VkModule& vkmod, IndexVK& indexVk, ResourceOwners& resources);
-        void BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, SamplerTexture& coltex, DepthTexture& coldepth, IndexTexture& idtex);
+        void BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, SamplerTexture& coltex, DepthTexture& coldepth, SamplerTexture& idtex);
         void RecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, uint32_t& frameIndex);
         void EndRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, SamplerTexture& coltex, DepthTexture& coldepth);
 

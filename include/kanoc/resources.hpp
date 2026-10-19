@@ -235,7 +235,7 @@ class ResourceOwners{
         WrapperOwner<ObjModel> models;
         WrapperOwner<SamplerTexture> samplertextures;
         WrapperOwner<DepthTexture> depthtextures;
-        WrapperOwner<IndexTexture> idxtextures;
+        //WrapperOwner<IndexTexture> idxtextures;
 
         HandleOwner<VkShaderModule> shaders;
         WrapperOwner<GraphicsPipeline> pipelines;
@@ -255,8 +255,8 @@ class ResourceOwners{
             depthtextures.BindDevice(vk);
             depthtextures.name = "depthtextures";
 
-            idxtextures.BindDevice(vk);
-            idxtextures.name = "idxtextures";
+            //idxtextures.BindDevice(vk);
+            //idxtextures.name = "idxtextures";
 
             shaders.BindDevice(vk);
             shaders.name = "shaders";

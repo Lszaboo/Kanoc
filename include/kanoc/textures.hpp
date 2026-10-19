@@ -28,6 +28,7 @@ class SamplerTexture {
 
         void InitFromFile(FullDevice& vk, VkCommandPool& cbpool, GraphicsQueue& queue, std::string path);
         void InitColorReadWrite(FullDevice& vk, glm::ivec2& size);
+        void InitIDReadWrite(FullDevice& vk, glm::ivec2& size);
         void Destroy(FullDevice& vk);
 
         void Resize(FullDevice& vk, glm::ivec2& size);
@@ -69,10 +70,4 @@ class ColorTexture : public BasicTexture{
         VkImageCreateInfo imageci = {};
 
         void Init(FullDevice &vk, glm::ivec2& size);
-};
-
-class IndexTexture : public BasicTexture{
-    public:
-        void Init(FullDevice &vk, glm::ivec2& size);
-        void FillBufferCMD(FullDevice  &vk);
 };
