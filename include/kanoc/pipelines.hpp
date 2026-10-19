@@ -2,6 +2,7 @@
 
 #include "kanoc/devices.hpp"
 #include "vulkan/vulkan_core.h"
+#include <vector>
 
 class GraphicsPipeline{
     public:
@@ -15,4 +16,47 @@ class GraphicsPipeline{
         static VkPipelineColorBlendStateCreateInfo basicColorblendci(VkPipelineColorBlendAttachmentState& blendattachmentci);
         static VkPipelineRasterizationStateCreateInfo basicRasterizationci();
         static VkPipelineMultisampleStateCreateInfo basicMultisampleci();
+};
+
+class PipelineBuilder{
+    public:
+
+        std::vector<VkPushConstantRange> pushconstants;
+        std::vector<VkDescriptorSetLayout> descriptorlayouts;
+        VkPipelineLayoutCreateInfo layoutci;
+
+        std::vector<VkVertexInputBindingDescription> vertexbindings;
+        std::vector<VkVertexInputAttributeDescription> vertexattributes;
+        VkPipelineVertexInputStateCreateInfo vertexci;
+
+        VkPipelineInputAssemblyStateCreateInfo inputassemblyci;
+
+        std::vector<VkPipelineShaderStageCreateInfo> shaderstagecis;
+
+        VkPipelineViewportStateCreateInfo viewportci;
+
+        std::vector<VkDynamicState> dynamicstates;
+        VkPipelineDynamicStateCreateInfo dynamicstateci;
+
+        VkPipelineDepthStencilStateCreateInfo depthstencilci;
+
+        std::vector<VkFormat> attachmentformats;
+        VkFormat depthformat;
+        VkPipelineRenderingCreateInfo renderingci;
+
+        std::vector<VkPipelineColorBlendAttachmentState> blendattachments;
+        VkPipelineColorBlendStateCreateInfo blendci;
+
+        VkPipelineRasterizationStateCreateInfo rasterci;
+
+        VkPipelineMultisampleStateCreateInfo multisampleci;
+
+        VkGraphicsPipelineCreateInfo pipelineci;
+
+        GraphicsPipeline Build(FullDevice& vk);
+        void BuildLayoutCI();
+        void BuildVertexCI();
+        void BuildDynamicCI();
+        void BuildRenderingCI();
+        void BuildBlendCI();
 };

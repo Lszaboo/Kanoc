@@ -164,6 +164,7 @@ void VkModule::initDevice(InitStack &init){
     };
 
     VkPhysicalDeviceFeatures vk10Features{
+        .independentBlend = VK_TRUE, // Enable independent blend for IndexVK.
         .samplerAnisotropy = VK_TRUE
     };
 

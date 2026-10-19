@@ -18,6 +18,11 @@ struct VsOut{
     float2 uv;
 };
 
+struct FsOut{
+    float4 col: SV_Target0;
+    uint id: SV_Target1;
+}
+
 // push constant cmd
 [[vk::push_constant]]
 uniform UniformData* udata;
@@ -43,6 +48,11 @@ VsOut main(VsIn in, uint idx : SV_VulkanInstanceID){
 
 
 [shader("fragment")]
-float4 main(VsOut in){
-    return float4(albedos[0].Sample(in.uv).rgb, 1.0);
+FsOut main(VsOut in){
+    FsOut out;
+
+    out.col = float4(albedos[0].Sample(in.uv).rgb, 1.0);
+    out.id = 1;
+
+    return out;
 }

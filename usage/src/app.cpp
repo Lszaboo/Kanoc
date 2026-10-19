@@ -394,71 +394,72 @@ void DuckVk::InitDescriptors(VkModule &vkmod, ResourceOwners& resources){
 }
 
 void DuckVk::InitPipeline(VkModule &vkmod, IndexVK& indexVk, ResourceOwners &resources){
+    PipelineBuilder pb;
+
     // pushconstants and descriptors in the pipeline.
-    VkPushConstantRange pushConstantRange{
-        .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-        .size = sizeof(VkDeviceAddress)
-    };
-    VkPipelineLayoutCreateInfo layoutci{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-        .setLayoutCount = 1,
-        .pSetLayouts = &descriptorlayout.resource,
-        .pushConstantRangeCount = 1,
-        .pPushConstantRanges = &pushConstantRange
-    };
+    pb.pushconstants.push_back(
+        {
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .size = sizeof(VkDeviceAddress)
+        }
+    );
+    pb.descriptorlayouts.push_back(
+        descriptorlayout.resource
+    );
 
     // whole buffer consists of multiple vertex structures
-    VkVertexInputBindingDescription vertexBinding{
-         .binding = 0,
-         .stride = sizeof(ObjModel::Vertex),
-         .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
-    };
+    pb.vertexbindings.push_back(
+        {
+            .binding = 0,
+            .stride = sizeof(ObjModel::Vertex),
+            .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
+        }
+    );
+
     // layout of one vertex
-    std::vector<VkVertexInputAttributeDescription> vertexAttributes{
-        { .location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT },
-        { .location = 1, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(ObjModel::Vertex, normal) },
-        { .location = 2, .binding = 0, .format = VK_FORMAT_R32G32_SFLOAT, .offset = offsetof(ObjModel::Vertex, uv) },
-    };
-    // ci theese 2 together
-    VkPipelineVertexInputStateCreateInfo vertexInputState{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-        .vertexBindingDescriptionCount = 1,
-        .pVertexBindingDescriptions = &vertexBinding,
-        .vertexAttributeDescriptionCount = static_cast<uint32_t>(vertexAttributes.size()),
-        .pVertexAttributeDescriptions = vertexAttributes.data(),
-    };
+    pb.vertexattributes.push_back(
+        { .location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT }
+    );
+    pb.vertexattributes.push_back(
+        { .location = 1, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(ObjModel::Vertex, normal) }
+    );
+    pb.vertexattributes.push_back(
+        { .location = 2, .binding = 0, .format = VK_FORMAT_R32G32_SFLOAT, .offset = offsetof(ObjModel::Vertex, uv) }
+    );
 
     // triangle list drawing setup
-    VkPipelineInputAssemblyStateCreateInfo inputAssemblyState{
+    pb.inputassemblyci = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
         .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
     };
 
-    // shaders
-    std::vector<VkPipelineShaderStageCreateInfo> shaderStages{
-        { .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-          .stage = VK_SHADER_STAGE_VERTEX_BIT,
-          .module = shader.resource, .pName = "main"},
-        { .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-          .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-          .module = shader.resource, .pName = "main" }
-    };
+    // shader stages
+    pb.shaderstagecis.push_back(
+        {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+            .stage = VK_SHADER_STAGE_VERTEX_BIT,
+            .module = shader.resource, .pName = "main"
+        }
+    );
+    pb.shaderstagecis.push_back(
+        {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .module = shader.resource, .pName = "main"
+        }
+    );
 
-    // dynamic viewport and scisor for resizing
-    VkPipelineViewportStateCreateInfo viewportState{
+    //viewport and scisor ci
+    pb.viewportci = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
         .viewportCount = 1,
         .scissorCount = 1
     };
-    std::vector<VkDynamicState> dynamicStates{ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
-    VkPipelineDynamicStateCreateInfo dynamicState{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-        .dynamicStateCount = 2,
-        .pDynamicStates = dynamicStates.data()
-    };
+    pb.dynamicstates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
+    pb.dynamicstates.push_back(VK_DYNAMIC_STATE_SCISSOR);
 
     // depth stencil
-    VkPipelineDepthStencilStateCreateInfo depthStencilState{
+    pb.depthstencilci = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
         .depthTestEnable = VK_TRUE,
         .depthWriteEnable = VK_TRUE,
@@ -466,38 +467,28 @@ void DuckVk::InitPipeline(VkModule &vkmod, IndexVK& indexVk, ResourceOwners &res
     };
 
     // color attachments (formats coming from vkmod)
-    VkPipelineRenderingCreateInfo renderingCI{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
-        .colorAttachmentCount = 1,
-        .pColorAttachmentFormats = &indexVk.coltex.resource->imageci.format,
-        .depthAttachmentFormat = indexVk.depth.resource->imageci.format
-    };
+    pb.attachmentformats.push_back(indexVk.coltex.resource->imageci.format);
+    pb.attachmentformats.push_back(VK_FORMAT_R32_UINT); // Magic for now
+    pb.depthformat = indexVk.depth.resource->imageci.format;
 
-    // unused but needed blend, line width and multisampling setup
-    auto blendattachmentci = GraphicsPipeline::basicColorBlendAttachmentci();
-    auto colorblendci = GraphicsPipeline::basicColorblendci(blendattachmentci);
-    auto rasterizationci = GraphicsPipeline::basicRasterizationci();
-    auto multisampleci = GraphicsPipeline::basicMultisampleci();
+    // per color attachment blend
+    pb.blendattachments.push_back(
+        GraphicsPipeline::basicColorBlendAttachmentci()
+    );
+    pb.blendattachments.push_back(
+        {
+            .blendEnable = VK_FALSE
+        }
+    );
 
-    // create whole pipeline
-    VkGraphicsPipelineCreateInfo pipelineci{
-        .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-        .pNext = &renderingCI,
-        .stageCount = 2,
-        .pStages = shaderStages.data(),
-        .pVertexInputState = &vertexInputState,
-        .pInputAssemblyState = &inputAssemblyState,
-        .pViewportState = &viewportState,
-        .pRasterizationState = &rasterizationci,
-        .pMultisampleState = &multisampleci,
-        .pDepthStencilState = &depthStencilState,
-        .pColorBlendState = &colorblendci,
-        .pDynamicState = &dynamicState,
-    };
-    pipeline = resources.pipelines.Add("Duck_Pipeline", GraphicsPipeline::Build(vkmod.vk, layoutci, pipelineci));
+    // line width and multisampling setup
+    pb.rasterci = GraphicsPipeline::basicRasterizationci();
+    pb.multisampleci = GraphicsPipeline::basicMultisampleci();
+
+    pipeline = resources.pipelines.Add("Duck_Pipeline", pb.Build(vkmod.vk));
 }
 
-void DuckVk::BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, SamplerTexture& coltex, DepthTexture& coldepth){
+void DuckVk::BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, SamplerTexture& coltex, DepthTexture& coldepth, IndexTexture& idtex){
     cmds.ibc.Add(
         {
             .srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -522,6 +513,19 @@ void DuckVk::BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize,
             .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, .levelCount = 1, .layerCount = 1 }
         }
     );
+    cmds.ibc.Add(
+        {
+            .srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .srcAccessMask = 0,
+            .dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+            .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .newLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+            .image = idtex.image,
+            .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1 }
+        }
+    );
+
     cmds.ibc.RecordAndClearCommands(cmds.cb);
 
     cmds.drc.Add(
@@ -531,6 +535,15 @@ void DuckVk::BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize,
             .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
             .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
             .clearValue{.color{ 0.0f, 0.0f, 0.2f, 1.0f }}
+        }
+    );
+    cmds.drc.Add(
+        {
+            .imageView = idtex.view,
+            .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+            .clearValue{.color{ 0, 0, 0, 0 }}
         }
     );
     cmds.drc.depth = {
@@ -692,7 +705,7 @@ void App::Play(Harness<App>::Modules& m){
         cmds.cb = m.vkmod.commandBuffers[frameIndex];
         m.vkmod.BeginCBRecordingToSSC(frameIndex);
 
-        duckVk.BeginRecordCommands(cmds, m.vkmod.windowSize, *indexVk.coltex.resource, *indexVk.depth.resource);
+        duckVk.BeginRecordCommands(cmds, m.vkmod.windowSize, *indexVk.coltex.resource, *indexVk.depth.resource, *indexVk.idtex.resource);
         duckVk.RecordCommands(cmds, m.vkmod.windowSize, frameIndex);
         duckVk.EndRecordCommands(cmds, m.vkmod.windowSize, *indexVk.coltex.resource, *indexVk.depth.resource);
 

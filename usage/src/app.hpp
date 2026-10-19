@@ -87,7 +87,7 @@ class DuckVk{
         std::array<Named<ShaderDataBuffer*>, VkModule::maxFramesInFlight> uniforms;
 
         void Init(VkModule& vkmod, IndexVK& indexVk, ResourceOwners& resources);
-        void BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, SamplerTexture& coltex, DepthTexture& coldepth);
+        void BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, SamplerTexture& coltex, DepthTexture& coldepth, IndexTexture& idtex);
         void RecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, uint32_t& frameIndex);
         void EndRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, SamplerTexture& coltex, DepthTexture& coldepth);
 
