@@ -469,7 +469,7 @@ void DuckVk::InitPipeline(VkModule &vkmod, IndexVK& indexVk, ResourceOwners &res
 
     // color attachments (formats coming from vkmod)
     pb.attachmentformats.push_back(indexVk.coltex.resource->imageci.format);
-    pb.attachmentformats.push_back(VK_FORMAT_R32_UINT); // Magic for now
+    pb.attachmentformats.push_back(indexVk.idtex.resource->imageci.format);
     pb.depthformat = indexVk.depth.resource->imageci.format;
 
     // per color attachment blend
