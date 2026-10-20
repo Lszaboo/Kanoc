@@ -15,10 +15,10 @@ static const float2 uvs[3] = {
 struct VsOut{
     float4 pos : SV_Position;
     float2 uv;
-}
+};
 
-[[vk::binding(0,0)]]
-Sampler2D color;
+[[vk::binding(0,0)]] Sampler2D color;
+[[vk::binding(1,0)]] Sampler2D<uint> id;
 
 [shader("vertex")]
 VsOut main(uint vidx: SV_VulkanVertexID){
@@ -33,10 +33,20 @@ VsOut main(uint vidx: SV_VulkanVertexID){
 
 [shader("fragment")]
 float4 main(VsOut input){
-    float4 col = color.Sample(input.uv);
-    if (distance(float2(0.5),input.uv)<0.5){
-        return col;
+
+    //float2 screencoord = float2(input.uv.x * 1280.0f,input.uv.y * 720.0f);
+    //uint2 pixelCoord = uint2(screencoord.xy);
+    //uint objectId = id.Load(int3(pixelCoord, 0));
+    uint objectId = id.Sample(input.uv);
+
+
+    //if (pixelCoord.x>640){
+    //    return float4(1.0,0.0,0.0,1.0);
+    //}
+
+    if (objectId != 0){
+        return float4(0.0,1.0,0.0,1.0);
     }else{
-        return float4(1.0,0.0,0.0,1.0);
+        return color.Sample(input.uv);
     }
 }

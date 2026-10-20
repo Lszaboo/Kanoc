@@ -16,20 +16,19 @@ struct VsIn{
 struct VsOut{
     float4 pos: SV_Position;
     float2 uv;
+    nointerpolation uint id;
 };
 
 struct FsOut{
     float4 col: SV_Target0;
     uint id: SV_Target1;
-}
+};
 
 // push constant cmd
-[[vk::push_constant]]
-uniform UniformData* udata;
+[[vk::push_constant]] uniform UniformData* udata;
 
 // binding - set
-[[vk::binding(0,0)]]
-Sampler2D albedos[];
+[[vk::binding(0,0)]] Sampler2D albedos[];
 
 [shader("vertex")]
 VsOut main(VsIn in, uint idx : SV_VulkanInstanceID){
@@ -40,19 +39,18 @@ VsOut main(VsIn in, uint idx : SV_VulkanInstanceID){
         mul( udata->view,
         mul( udata->ducks[idx], float4(in.pos.xyz, 1.0)
     )));
-
     out.uv = in.uv;
+    out.id = idx;
 
     return out;
 }
-
 
 [shader("fragment")]
 FsOut main(VsOut in){
     FsOut out;
 
     out.col = float4(albedos[0].Sample(in.uv).rgb, 1.0);
-    out.id = 1;
+    out.id = in.id;
 
     return out;
 }

@@ -89,7 +89,7 @@ class DuckVk{
         void Init(VkModule& vkmod, IndexVK& indexVk, ResourceOwners& resources);
         void BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, SamplerTexture& coltex, DepthTexture& coldepth, SamplerTexture& idtex);
         void RecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, uint32_t& frameIndex);
-        void EndRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, SamplerTexture& coltex, DepthTexture& coldepth);
+        void EndRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, SamplerTexture& coltex, SamplerTexture& idtex);
 
     protected:
         void InitDescriptors(VkModule& vkmod, ResourceOwners& resources);

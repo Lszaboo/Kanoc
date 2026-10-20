@@ -78,13 +78,22 @@ void IndexVK::InitDescriptors(VkModule& vkmod, ResourceOwners& resources){
         },
         0 // No flags needed.
     );
+    layoutBuilder.Add(
+        {
+            .binding = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .descriptorCount = 1,
+            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT
+        },
+        0 // No flags needed.
+    );
     combinerDescriptorLayout = resources.descriptorlayouts.Add("Index_Combiner_Descriptor_Layout", layoutBuilder.Build(vkmod.vk));
 
     DescriptorPoolBuilder poolbuilder{};
     poolbuilder.Add(
         {
             .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .descriptorCount = 1
+            .descriptorCount = 2
         }
     );
     combinerDescriptors = resources.descriptorpools.Add("Index_Combiner_Descriptors", {.pool = poolbuilder.Build(vkmod.vk, 1)});
@@ -96,22 +105,45 @@ void IndexVK::InitDescriptors(VkModule& vkmod, ResourceOwners& resources){
     );
     setAllocator.Allocate(vkmod.vk, *combinerDescriptors.resource);
 
-    VkDescriptorImageInfo imageInfo{
-        .sampler = coltex.resource->sampler,
-        .imageView = coltex.resource->view,
-        .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL
+    // Upload descriptor set data.
+    std::vector<VkDescriptorImageInfo> imageinfos = {
+        {
+            .sampler = coltex.resource->sampler,
+            .imageView = coltex.resource->view,
+            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+        },
+        {
+            .sampler = idtex.resource->sampler,
+            .imageView = idtex.resource->view,
+            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+        }
     };
-    VkWriteDescriptorSet writeDescSet{
+    VkWriteDescriptorSet writeDescSet1{
         .dstSet = combinerDescriptors.resource->sets[0],
         .dstBinding = 0,
         .descriptorCount = 1,
-        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, // conform to the type at binding
-        .pImageInfo = &imageInfo
+        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, // Conform to the type at binding.
+        .pImageInfo = &imageinfos[0]
     };
-    combinerDescriptors.resource->WriteSet(vkmod.vk, writeDescSet);
+    combinerDescriptors.resource->WriteSet(vkmod.vk, writeDescSet1);
+    VkWriteDescriptorSet writeDescSet2{
+        .dstSet = combinerDescriptors.resource->sets[0],
+        .dstBinding = 1,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, // Conform to the type at binding.
+        .pImageInfo = &imageinfos[1]
+    };
+    combinerDescriptors.resource->WriteSet(vkmod.vk, writeDescSet2);
 }
 
 void IndexVK::InitCombinerPipeline(VkModule& vkmod, ResourceOwners& resources){
+    PipelineBuilder pb;
+
+    // descriptor and pushconstants
+    pb.descriptorlayouts.push_back(
+        combinerDescriptorLayout.resource
+    );
+
     // descriptor and pushconstants
     VkPipelineLayoutCreateInfo layoutci{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
@@ -207,17 +239,24 @@ void IndexVK::Resize(VkModule& vkmod){
     idtex.resource->Resize(vkmod.vk, vkmod.windowSize);
 
     // Redo just the Descriptor Set, so that it points to the correct resources.
-    VkDescriptorImageInfo imageInfo{
-        .sampler = coltex.resource->sampler,
-        .imageView = coltex.resource->view, // This now points to new view.
-        .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL
+    std::vector<VkDescriptorImageInfo> imageinfos = {
+        {
+            .sampler = coltex.resource->sampler,
+            .imageView = coltex.resource->view, // This now points to new view.
+            .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL
+        },
+        {
+            .sampler = idtex.resource->sampler,
+            .imageView = idtex.resource->view, // This now points to new view.
+            .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL
+        }
     };
     VkWriteDescriptorSet writeDescSet{
         .dstSet = combinerDescriptors.resource->sets[0], // Write to set 0, again.
         .dstBinding = 0, // The set is bound to 0 in shader.
-        .descriptorCount = 1,
+        .descriptorCount = 2,
         .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, // conform to the type at binding
-        .pImageInfo = &imageInfo
+        .pImageInfo = imageinfos.data()
     };
     combinerDescriptors.resource->WriteSet(vkmod.vk, writeDescSet);
 }
@@ -478,7 +517,8 @@ void DuckVk::InitPipeline(VkModule &vkmod, IndexVK& indexVk, ResourceOwners &res
     );
     pb.blendattachments.push_back(
         {
-            .blendEnable = VK_FALSE
+            .blendEnable = VK_FALSE,
+            .colorWriteMask = VK_COLOR_COMPONENT_R_BIT
         }
     );
 
@@ -526,7 +566,6 @@ void DuckVk::BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize,
             .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1 }
         }
     );
-
     cmds.ibc.RecordAndClearCommands(cmds.cb);
 
     cmds.drc.Add(
@@ -544,7 +583,7 @@ void DuckVk::BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize,
             .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
             .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
             .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-            .clearValue{.color{ 0, 0, 0, 0 }}
+            .clearValue{.color{.uint32 = {0, 0, 0, 0}}}
         }
     );
     cmds.drc.depth = {
@@ -592,7 +631,7 @@ void DuckVk::RecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, uint
     vkCmdDrawIndexed(cmds.cb, model.resource->indexcount, 3, 0, 0, 0);
 }
 
-void DuckVk::EndRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, SamplerTexture& coltex, DepthTexture& coldepth){
+void DuckVk::EndRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, SamplerTexture& coltex, SamplerTexture& idtex){
 
     cmds.drc.EndDynamicRendering(cmds.cb);
 
@@ -608,6 +647,18 @@ void DuckVk::EndRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, S
             .image = coltex.image,
             .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1 }
         }
+    );
+    cmds.ibc.Add(
+      {
+          .srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+          .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+          .dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+          .dstAccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
+          .oldLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+          .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+          .image = idtex.image,
+          .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1 }
+      }
     );
     cmds.ibc.RecordAndClearCommands(cmds.cb);
 }
@@ -708,7 +759,7 @@ void App::Play(Harness<App>::Modules& m){
 
         duckVk.BeginRecordCommands(cmds, m.vkmod.windowSize, *indexVk.coltex.resource, *indexVk.depth.resource, *indexVk.idtex.resource);
         duckVk.RecordCommands(cmds, m.vkmod.windowSize, frameIndex);
-        duckVk.EndRecordCommands(cmds, m.vkmod.windowSize, *indexVk.coltex.resource, *indexVk.depth.resource);
+        duckVk.EndRecordCommands(cmds, m.vkmod.windowSize, *indexVk.coltex.resource, *indexVk.idtex.resource);
 
         indexVk.BeginRecordCommands(cmds, m.vkmod.windowSize, imageIndex, m.vkmod.ssc, m.vkmod.sscdepth);
         indexVk.RecordCommands(cmds, m.vkmod.windowSize, imageIndex, m.vkmod.ssc, m.vkmod.sscdepth);
