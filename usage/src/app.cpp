@@ -251,14 +251,22 @@ void IndexVK::Resize(VkModule& vkmod){
             .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL
         }
     };
-    VkWriteDescriptorSet writeDescSet{
+    VkWriteDescriptorSet writeDescSet1{
         .dstSet = combinerDescriptors.resource->sets[0], // Write to set 0, again.
-        .dstBinding = 0, // The set is bound to 0 in shader.
-        .descriptorCount = 2,
-        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, // conform to the type at binding
-        .pImageInfo = imageinfos.data()
+        .dstBinding = 0, // The 0 bound descriptor in the set.
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, // Conform to the type at binding.
+        .pImageInfo = &imageinfos[0]
     };
-    combinerDescriptors.resource->WriteSet(vkmod.vk, writeDescSet);
+    combinerDescriptors.resource->WriteSet(vkmod.vk, writeDescSet1);
+    VkWriteDescriptorSet writeDescSet2{
+        .dstSet = combinerDescriptors.resource->sets[0],
+        .dstBinding = 1, // The 1 bound descriptor in the set.
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, // Conform to the type at binding.
+        .pImageInfo = &imageinfos[1]
+    };
+    combinerDescriptors.resource->WriteSet(vkmod.vk, writeDescSet2);
 }
 
 void IndexVK::BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, uint32_t& nextsscimage, SurfaceSwapChain& ssc, DepthTexture& sscdepth){
