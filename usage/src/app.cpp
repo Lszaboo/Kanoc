@@ -139,60 +139,44 @@ void IndexVK::InitDescriptors(VkModule& vkmod, ResourceOwners& resources){
 void IndexVK::InitCombinerPipeline(VkModule& vkmod, ResourceOwners& resources){
     PipelineBuilder pb;
 
-    // descriptor and pushconstants
+    // descriptors needed only.
     pb.descriptorlayouts.push_back(
         combinerDescriptorLayout.resource
     );
 
-    // descriptor and pushconstants
-    VkPipelineLayoutCreateInfo layoutci{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-        .setLayoutCount = 1,
-        .pSetLayouts = &combinerDescriptorLayout.resource, // in shader, it is "Sampler2D color;"
-        .pushConstantRangeCount = 0,    // no pushconstants used.
-        .pPushConstantRanges = nullptr  // no pushconstants used.
-    };
-
-    // vertex data in the pipeline (None)
-    VkPipelineVertexInputStateCreateInfo vertexinputci{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-        .vertexBindingDescriptionCount = 0,
-        .pVertexBindingDescriptions = nullptr,
-        .vertexAttributeDescriptionCount = 0,
-        .pVertexAttributeDescriptions = nullptr,
-    };
-
     // triangle list drawing setup
-    VkPipelineInputAssemblyStateCreateInfo inputassemblyci{
+    pb.inputassemblyci = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
         .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
     };
 
     // shaders
-    std::vector<VkPipelineShaderStageCreateInfo> shaderstagecis{
-        { .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-          .stage = VK_SHADER_STAGE_VERTEX_BIT,
-          .module = combinerShader.resource, .pName = "main"},
-        { .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-          .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-          .module = combinerShader.resource, .pName = "main" }
-    };
+    pb.shaderstagecis.push_back(
+        {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+            .stage = VK_SHADER_STAGE_VERTEX_BIT,
+            .module = combinerShader.resource, .pName = "main"
+        }
+    );
+    pb.shaderstagecis.push_back(
+        {
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .module = combinerShader.resource, .pName = "main"
+        }
+    );
 
     // dynamic viewport and scisor for resizing
-    VkPipelineViewportStateCreateInfo viewportci{
+    pb.viewportci = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
         .viewportCount = 1,
         .scissorCount = 1
     };
-    std::vector<VkDynamicState> dynamicstate{ VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
-    VkPipelineDynamicStateCreateInfo dynamicstateci{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-        .dynamicStateCount = 2,
-        .pDynamicStates = dynamicstate.data()
-    };
+    pb.dynamicstates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
+    pb.dynamicstates.push_back(VK_DYNAMIC_STATE_SCISSOR);
 
     // depth stencil
-    VkPipelineDepthStencilStateCreateInfo depthstencilci{
+    pb.depthstencilci = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
         .depthTestEnable = VK_TRUE,
         .depthWriteEnable = VK_TRUE,
@@ -200,36 +184,17 @@ void IndexVK::InitCombinerPipeline(VkModule& vkmod, ResourceOwners& resources){
     };
 
     // color attachments
-    VkPipelineRenderingCreateInfo renderingci{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
-        .colorAttachmentCount = 1,
-        .pColorAttachmentFormats = &vkmod.ssc.swapchainci.imageFormat,
-        .depthAttachmentFormat = vkmod.sscdepth.imageci.format
-    };
+    pb.attachmentformats.push_back(vkmod.ssc.swapchainci.imageFormat);
+    pb.depthformat = vkmod.sscdepth.imageci.format;
 
     // unused but needed blend, line width and multisampling setup
-    auto blendattachmentci = GraphicsPipeline::basicColorBlendAttachmentci();
-    auto colorblendci = GraphicsPipeline::basicColorblendci(blendattachmentci); // must keep blendattachmentci alove until colorblendci
-    auto rasterizationci = GraphicsPipeline::basicRasterizationci();
-    auto multisampleci = GraphicsPipeline::basicMultisampleci();
+    pb.blendattachments.push_back(
+        GraphicsPipeline::basicColorBlendAttachmentci()
+    );
+    pb.rasterci = GraphicsPipeline::basicRasterizationci();
+    pb.multisampleci = GraphicsPipeline::basicMultisampleci();
 
-    // create whole pipeline
-    VkGraphicsPipelineCreateInfo pipelineci{
-        .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-        .pNext = &renderingci,
-        .stageCount = 2,
-        .pStages = shaderstagecis.data(),
-        .pVertexInputState = &vertexinputci,
-        .pInputAssemblyState = &inputassemblyci,
-        .pViewportState = &viewportci,
-        .pRasterizationState = &rasterizationci,
-        .pMultisampleState = &multisampleci,
-        .pDepthStencilState = &depthstencilci,
-        .pColorBlendState = &colorblendci,
-        .pDynamicState = &dynamicstateci,
-    };
-
-    combinerPipeline = resources.pipelines.Add("Index_Combiner_Pipeline", GraphicsPipeline::Build(vkmod.vk, layoutci, pipelineci));
+    combinerPipeline = resources.pipelines.Add("Index_Combiner_Pipeline", pb.Build(vkmod.vk));
 }
 
 void IndexVK::Resize(VkModule& vkmod){
