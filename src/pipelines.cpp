@@ -48,23 +48,33 @@ VkPipelineMultisampleStateCreateInfo GraphicsPipeline::basicMultisampleci(){
 }
 
 GraphicsPipeline PipelineBuilder::Build(FullDevice& vk){
-    BuildLayoutCI();
-    BuildVertexCI();
-    BuildDynamicCI();
-    BuildRenderingCI();
-    BuildBlendCI();
+    auto layoutci = CreateLayoutCI(defPushConstants, defDescriptorLayouts);
+    auto vertexci = CreateVertexCI(defVertexBindings, defVertexAttributes);
+    auto dynamicstateci = CreateDynamicCI(defDynamicStates);
+    auto renderci = CreateRenderingCI(defAttachmentFormats, defDepthFormat);
+    auto blendci = CreateBlendCI(defAttachmentBlends);
+
+    // Automatic .stype setting.
+    for (auto& shaderstageci : defShaderStageCIs) {
+        shaderstageci.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    }
+    defInputAssemblyCI.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    defViewportCI.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    defRasterizationCI.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    defMultiSampleCI.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    defDepthStencilCI.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 
     pipelineci = {
         .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-        .pNext = &renderingci,
-        .stageCount = static_cast<uint32_t>(shaderstagecis.size()),
-        .pStages = shaderstagecis.data(),
+        .pNext = &renderci,
+        .stageCount = static_cast<uint32_t>(defShaderStageCIs.size()),
+        .pStages = defShaderStageCIs.data(),
         .pVertexInputState = &vertexci,
-        .pInputAssemblyState = &inputassemblyci,
-        .pViewportState = &viewportci,
-        .pRasterizationState = &rasterci,
-        .pMultisampleState = &multisampleci,
-        .pDepthStencilState = &depthstencilci,
+        .pInputAssemblyState = &defInputAssemblyCI,
+        .pViewportState = &defViewportCI,
+        .pRasterizationState = &defRasterizationCI,
+        .pMultisampleState = &defMultiSampleCI,
+        .pDepthStencilState = &defDepthStencilCI,
         .pColorBlendState = &blendci,
         .pDynamicState = &dynamicstateci,
     };
@@ -78,8 +88,8 @@ GraphicsPipeline PipelineBuilder::Build(FullDevice& vk){
     return pipeline;
 }
 
-void PipelineBuilder::BuildLayoutCI(){
-    layoutci = {
+VkPipelineLayoutCreateInfo PipelineBuilder::CreateLayoutCI(std::vector<VkPushConstantRange>& pushconstants, std::vector<VkDescriptorSetLayout>& descriptorlayouts){
+    return {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
         .setLayoutCount = static_cast<uint32_t>(descriptorlayouts.size()),
         .pSetLayouts = descriptorlayouts.data(),
@@ -88,8 +98,8 @@ void PipelineBuilder::BuildLayoutCI(){
     };
 }
 
-void PipelineBuilder::BuildVertexCI(){
-    vertexci = {
+VkPipelineVertexInputStateCreateInfo PipelineBuilder::CreateVertexCI(std::vector<VkVertexInputBindingDescription>& vertexbindings, std::vector<VkVertexInputAttributeDescription>& vertexattributes){
+    return {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
         .vertexBindingDescriptionCount = static_cast<uint32_t>(vertexbindings.size()),
         .pVertexBindingDescriptions = vertexbindings.data(),
@@ -98,16 +108,16 @@ void PipelineBuilder::BuildVertexCI(){
     };
 }
 
-void PipelineBuilder::BuildDynamicCI(){
-    dynamicstateci = {
+VkPipelineDynamicStateCreateInfo PipelineBuilder::CreateDynamicCI(std::vector<VkDynamicState>& dynamicstates){
+    return {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
         .dynamicStateCount = static_cast<uint32_t>(dynamicstates.size()),
         .pDynamicStates = dynamicstates.data()
     };
 }
 
-void PipelineBuilder::BuildRenderingCI(){
-    renderingci = {
+VkPipelineRenderingCreateInfo PipelineBuilder::CreateRenderingCI(std::vector<VkFormat>& attachmentformats, VkFormat& depthformat){
+    return {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
         .colorAttachmentCount = static_cast<uint32_t>(attachmentformats.size()),
         .pColorAttachmentFormats = attachmentformats.data(),
@@ -115,8 +125,8 @@ void PipelineBuilder::BuildRenderingCI(){
     };
 }
 
-void PipelineBuilder::BuildBlendCI(){
-    blendci = {
+VkPipelineColorBlendStateCreateInfo PipelineBuilder::CreateBlendCI(std::vector<VkPipelineColorBlendAttachmentState>& blendattachments){
+    return {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
         .attachmentCount = static_cast<uint32_t>(blendattachments.size()),
         .pAttachments = blendattachments.data()

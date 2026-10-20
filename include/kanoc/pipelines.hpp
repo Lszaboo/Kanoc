@@ -20,43 +20,35 @@ class GraphicsPipeline{
 
 class PipelineBuilder{
     public:
+        std::vector<VkPushConstantRange> defPushConstants;
+        std::vector<VkDescriptorSetLayout> defDescriptorLayouts;
 
-        std::vector<VkPushConstantRange> pushconstants;
-        std::vector<VkDescriptorSetLayout> descriptorlayouts;
-        VkPipelineLayoutCreateInfo layoutci;
+        std::vector<VkVertexInputBindingDescription> defVertexBindings;
+        std::vector<VkVertexInputAttributeDescription> defVertexAttributes;
+        VkPipelineInputAssemblyStateCreateInfo defInputAssemblyCI;
 
-        std::vector<VkVertexInputBindingDescription> vertexbindings;
-        std::vector<VkVertexInputAttributeDescription> vertexattributes;
-        VkPipelineVertexInputStateCreateInfo vertexci;
+        std::vector<VkPipelineShaderStageCreateInfo> defShaderStageCIs;
 
-        VkPipelineInputAssemblyStateCreateInfo inputassemblyci;
+        VkPipelineViewportStateCreateInfo defViewportCI;
+        std::vector<VkDynamicState> defDynamicStates;
 
-        std::vector<VkPipelineShaderStageCreateInfo> shaderstagecis;
+        std::vector<VkFormat> defAttachmentFormats;
+        std::vector<VkPipelineColorBlendAttachmentState> defAttachmentBlends;
 
-        VkPipelineViewportStateCreateInfo viewportci;
+        VkPipelineDepthStencilStateCreateInfo defDepthStencilCI;
+        VkFormat defDepthFormat;
 
-        std::vector<VkDynamicState> dynamicstates;
-        VkPipelineDynamicStateCreateInfo dynamicstateci;
-
-        VkPipelineDepthStencilStateCreateInfo depthstencilci;
-
-        std::vector<VkFormat> attachmentformats;
-        VkFormat depthformat;
-        VkPipelineRenderingCreateInfo renderingci;
-
-        std::vector<VkPipelineColorBlendAttachmentState> blendattachments;
-        VkPipelineColorBlendStateCreateInfo blendci;
-
-        VkPipelineRasterizationStateCreateInfo rasterci;
-
-        VkPipelineMultisampleStateCreateInfo multisampleci;
-
-        VkGraphicsPipelineCreateInfo pipelineci;
+        VkPipelineRasterizationStateCreateInfo defRasterizationCI;
+        VkPipelineMultisampleStateCreateInfo defMultiSampleCI;
 
         GraphicsPipeline Build(FullDevice& vk);
-        void BuildLayoutCI();
-        void BuildVertexCI();
-        void BuildDynamicCI();
-        void BuildRenderingCI();
-        void BuildBlendCI();
+
+        static VkPipelineLayoutCreateInfo CreateLayoutCI(std::vector<VkPushConstantRange>& pushconstants, std::vector<VkDescriptorSetLayout>& descriptorlayouts);
+        static VkPipelineVertexInputStateCreateInfo CreateVertexCI(std::vector<VkVertexInputBindingDescription>& vertexbindings, std::vector<VkVertexInputAttributeDescription>& vertexattributes);
+        static VkPipelineDynamicStateCreateInfo CreateDynamicCI(std::vector<VkDynamicState>& dynamicstates);
+        static VkPipelineRenderingCreateInfo CreateRenderingCI(std::vector<VkFormat>& attachmentformats, VkFormat& depthformat);
+        static VkPipelineColorBlendStateCreateInfo CreateBlendCI(std::vector<VkPipelineColorBlendAttachmentState>& blendattachments);
+
+    protected:
+        VkGraphicsPipelineCreateInfo pipelineci;
 };

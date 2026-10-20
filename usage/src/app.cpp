@@ -140,59 +140,46 @@ void IndexVK::InitCombinerPipeline(VkModule& vkmod, ResourceOwners& resources){
     PipelineBuilder pb;
 
     // descriptors needed only.
-    pb.descriptorlayouts.push_back(
-        combinerDescriptorLayout.resource
-    );
+    pb.defDescriptorLayouts.push_back(combinerDescriptorLayout.resource);
 
     // triangle list drawing setup
-    pb.inputassemblyci = {
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+    pb.defInputAssemblyCI = {
         .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
     };
 
     // shaders
-    pb.shaderstagecis.push_back(
-        {
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+    pb.defShaderStageCIs.push_back({
             .stage = VK_SHADER_STAGE_VERTEX_BIT,
             .module = combinerShader.resource, .pName = "main"
-        }
-    );
-    pb.shaderstagecis.push_back(
-        {
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+    });
+    pb.defShaderStageCIs.push_back({
             .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
             .module = combinerShader.resource, .pName = "main"
-        }
-    );
+    });
 
     // dynamic viewport and scisor for resizing
-    pb.viewportci = {
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+    pb.defViewportCI = {
         .viewportCount = 1,
         .scissorCount = 1
     };
-    pb.dynamicstates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
-    pb.dynamicstates.push_back(VK_DYNAMIC_STATE_SCISSOR);
+    pb.defDynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
+    pb.defDynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
+
+    // color attachments
+    pb.defAttachmentFormats.push_back(vkmod.ssc.swapchainci.imageFormat);
+    pb.defAttachmentBlends.push_back(GraphicsPipeline::basicColorBlendAttachmentci());
 
     // depth stencil
-    pb.depthstencilci = {
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+    pb.defDepthStencilCI = {
         .depthTestEnable = VK_TRUE,
         .depthWriteEnable = VK_TRUE,
         .depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL
     };
+    pb.defDepthFormat = vkmod.sscdepth.imageci.format;
 
-    // color attachments
-    pb.attachmentformats.push_back(vkmod.ssc.swapchainci.imageFormat);
-    pb.depthformat = vkmod.sscdepth.imageci.format;
-
-    // unused but needed blend, line width and multisampling setup
-    pb.blendattachments.push_back(
-        GraphicsPipeline::basicColorBlendAttachmentci()
-    );
-    pb.rasterci = GraphicsPipeline::basicRasterizationci();
-    pb.multisampleci = GraphicsPipeline::basicMultisampleci();
+    // unused but needed line width and multisampling setup
+    pb.defRasterizationCI = GraphicsPipeline::basicRasterizationci();
+    pb.defMultiSampleCI = GraphicsPipeline::basicMultisampleci();
 
     combinerPipeline = resources.pipelines.Add("Index_Combiner_Pipeline", pb.Build(vkmod.vk));
 }
@@ -410,94 +397,69 @@ void DuckVk::InitPipeline(VkModule &vkmod, IndexVK& indexVk, ResourceOwners &res
     PipelineBuilder pb;
 
     // pushconstants and descriptors in the pipeline.
-    pb.pushconstants.push_back(
-        {
+    pb.defPushConstants.push_back({
             .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
             .size = sizeof(VkDeviceAddress)
-        }
-    );
-    pb.descriptorlayouts.push_back(
-        descriptorlayout.resource
-    );
+        });
+    pb.defDescriptorLayouts.push_back(descriptorlayout.resource);
 
     // whole buffer consists of multiple vertex structures
-    pb.vertexbindings.push_back(
-        {
+    pb.defVertexBindings.push_back({
             .binding = 0,
             .stride = sizeof(ObjModel::Vertex),
             .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
-        }
-    );
-
-    // layout of one vertex
-    pb.vertexattributes.push_back(
+    });
+    pb.defVertexAttributes.push_back(
         { .location = 0, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT }
     );
-    pb.vertexattributes.push_back(
+    pb.defVertexAttributes.push_back(
         { .location = 1, .binding = 0, .format = VK_FORMAT_R32G32B32_SFLOAT, .offset = offsetof(ObjModel::Vertex, normal) }
     );
-    pb.vertexattributes.push_back(
+    pb.defVertexAttributes.push_back(
         { .location = 2, .binding = 0, .format = VK_FORMAT_R32G32_SFLOAT, .offset = offsetof(ObjModel::Vertex, uv) }
     );
-
-    // triangle list drawing setup
-    pb.inputassemblyci = {
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+    pb.defInputAssemblyCI = {
         .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
     };
 
     // shader stages
-    pb.shaderstagecis.push_back(
-        {
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+    pb.defShaderStageCIs.push_back({
             .stage = VK_SHADER_STAGE_VERTEX_BIT,
             .module = shader.resource, .pName = "main"
-        }
-    );
-    pb.shaderstagecis.push_back(
-        {
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+    });
+    pb.defShaderStageCIs.push_back({
             .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
             .module = shader.resource, .pName = "main"
-        }
-    );
+    });
 
     //viewport and scisor ci
-    pb.viewportci = {
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+    pb.defViewportCI = {
         .viewportCount = 1,
         .scissorCount = 1
     };
-    pb.dynamicstates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
-    pb.dynamicstates.push_back(VK_DYNAMIC_STATE_SCISSOR);
+    pb.defDynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
+    pb.defDynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
+
+    // color attachments (formats coming from vkmod)
+    pb.defAttachmentFormats.push_back(indexVk.coltex.resource->imageci.format);
+    pb.defAttachmentFormats.push_back(indexVk.idtex.resource->imageci.format);
+    pb.defAttachmentBlends.push_back(GraphicsPipeline::basicColorBlendAttachmentci());
+    pb.defAttachmentBlends.push_back({
+            .blendEnable = VK_FALSE,
+            .colorWriteMask = VK_COLOR_COMPONENT_R_BIT
+    });
 
     // depth stencil
-    pb.depthstencilci = {
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+    pb.defDepthStencilCI = {
         .depthTestEnable = VK_TRUE,
         .depthWriteEnable = VK_TRUE,
         .depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL
     };
-
-    // color attachments (formats coming from vkmod)
-    pb.attachmentformats.push_back(indexVk.coltex.resource->imageci.format);
-    pb.attachmentformats.push_back(indexVk.idtex.resource->imageci.format);
-    pb.depthformat = indexVk.depth.resource->imageci.format;
-
-    // per color attachment blend
-    pb.blendattachments.push_back(
-        GraphicsPipeline::basicColorBlendAttachmentci()
-    );
-    pb.blendattachments.push_back(
-        {
-            .blendEnable = VK_FALSE,
-            .colorWriteMask = VK_COLOR_COMPONENT_R_BIT
-        }
-    );
+    pb.defDepthFormat = indexVk.depth.resource->imageci.format;
 
     // line width and multisampling setup
-    pb.rasterci = GraphicsPipeline::basicRasterizationci();
-    pb.multisampleci = GraphicsPipeline::basicMultisampleci();
+    pb.defRasterizationCI = GraphicsPipeline::basicRasterizationci();
+    pb.defMultiSampleCI = GraphicsPipeline::basicMultisampleci();
 
     pipeline = resources.pipelines.Add("Duck_Pipeline", pb.Build(vkmod.vk));
 }
