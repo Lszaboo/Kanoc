@@ -64,6 +64,7 @@ class ObjModel{
  */
 class StagingBuffer{
     public:
+        BufferBuilder bb;
         Buffer buf;
         uint32_t size;
 
@@ -71,6 +72,8 @@ class StagingBuffer{
         static StagingBuffer BuildForUpload(FullDevice& vk, uint32_t size, char* data);
         static StagingBuffer BuildForDownload(FullDevice& vk, uint32_t size);
         void Destroy(FullDevice& vk);
+
+        void Resize(FullDevice& vk, uint32_t size);
 };
 
 struct ShaderBuffer {

@@ -36,18 +36,16 @@ void IndexVK::Init(VkModule& vkmod, ResourceOwners& resources){
 
     OneTimeCB cb;
     ImageBarrierCommander ibc;
-    ibc.Add(
-        {
-            .srcStageMask = VK_PIPELINE_STAGE_2_NONE,
-            .srcAccessMask = VK_ACCESS_2_NONE,
-            .dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-            .dstAccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
-            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-            .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            .image = coltex.resource->image,
-            .subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 } //{ .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 0, .layerCount = 1 }
-        }
-    );
+    ibc.Add({
+        .srcStageMask = VK_PIPELINE_STAGE_2_NONE,
+        .srcAccessMask = VK_ACCESS_2_NONE,
+        .dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+        .dstAccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
+        .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        .image = coltex.resource->image,
+        .subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 } //{ .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 0, .layerCount = 1 }
+    });
     cb.Begin(vkmod.vk, vkmod.commandPool);
     ibc.RecordAndClearCommands(cb.handle);
     cb.End(vkmod.vk, vkmod.queue);
@@ -197,6 +195,11 @@ void IndexVK::Resize(VkModule& vkmod){
     coltex.resource->Resize(vkmod.vk, vkmod.windowSize);
     idtex.resource->Resize(vkmod.vk, vkmod.windowSize);
 
+    uint32_t idtexsize = static_cast<uint32_t>(vkmod.windowSize.x * vkmod.windowSize.y) * sizeof(uint32_t);
+    for (int i = 0; i < VkModule::maxFramesInFlight; i++) {
+        idbufs[i].resource->Resize(vkmod.vk, idtexsize);
+    }
+
     // Redo just the Descriptor Set, so that it points to the correct resources.
     std::vector<VkDescriptorImageInfo> imageinfos = {
         {
@@ -228,7 +231,7 @@ void IndexVK::Resize(VkModule& vkmod){
     combinerDescriptors.resource->WriteSet(vkmod.vk, writeDescSet2);
 }
 
-void IndexVK::BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, uint32_t& nextsscimage, SurfaceSwapChain& ssc, DepthTexture& sscdepth){
+void IndexVK::BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, uint32_t& nextsscimage, SurfaceSwapChain& ssc, DepthTexture& sscdepth, uint32_t& frameIndex){
     // transition image layouts
     // src: previous stage, and its usage (access) of the image
     // dst: next stage, and its usage (access) of the image
@@ -236,11 +239,56 @@ void IndexVK::BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize
     // new: to this layout
     // src -> barrier(old->new) -> dst
 
-    //cmds.ibc.Add({
-    //
-    //});
-    //cmds.ibc.RecordAndClearCommands(cmds.cbs);
+    cmds.ibc.Add({
+        .srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+        .dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+        .dstAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT,
+        .oldLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+        .newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, // We will download from this texture.
+        .image = idtex.resource->image,
+        .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1 }
+    });
+    cmds.ibc.RecordAndClearCommands(cmds.cb);
 
+    VkBufferImageCopy copyregions{
+        .bufferOffset = 0,
+        .bufferRowLength = 0,
+        .bufferImageHeight = 0,
+        .imageSubresource = { .aspectMask=VK_IMAGE_ASPECT_COLOR_BIT, .mipLevel=0, .baseArrayLayer=0, .layerCount=1},
+        .imageOffset = {.x=0, .y=0, .z=0},
+        .imageExtent = {.width=static_cast<uint32_t>(windowSize.x), .height=static_cast<uint32_t>(windowSize.y), .depth=1}
+    };
+    vkCmdCopyImageToBuffer(cmds.cb, idtex.resource->image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, idbufs[frameIndex].resource->buf.handle, 1, &copyregions);
+
+    VkBufferMemoryBarrier2 bufferbarrierci{
+        .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+        .srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT,
+        .srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+        .dstStageMask = VK_PIPELINE_STAGE_2_HOST_BIT,
+        .dstAccessMask = VK_ACCESS_2_HOST_READ_BIT,
+        .buffer = idbufs[frameIndex].resource->buf.handle,
+        .offset = 0,
+        .size = VK_WHOLE_SIZE
+    };
+    VkDependencyInfo barrierci{
+        .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+        .bufferMemoryBarrierCount = 1,
+        .pBufferMemoryBarriers = &bufferbarrierci
+    };
+    vkCmdPipelineBarrier2(cmds.cb, &barrierci); // Memory barrier on buffer, just so copy is handled robustly
+
+
+    cmds.ibc.Add({
+        .srcStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+        .srcAccessMask = VK_ACCESS_2_TRANSFER_READ_BIT,
+        .dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+        .dstAccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
+        .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        .image = idtex.resource->image,
+        .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1 }
+    });
     cmds.ibc.Add({
         .srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
         .srcAccessMask = 0,
@@ -590,18 +638,6 @@ void DuckVk::EndRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, S
             .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1 }
         }
     );
-    cmds.ibc.Add(
-      {
-          .srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-          .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-          .dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-          .dstAccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
-          .oldLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-          .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-          .image = idtex.image,
-          .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1 }
-      }
-    );
     cmds.ibc.RecordAndClearCommands(cmds.cb);
 }
 
@@ -703,7 +739,7 @@ void App::Play(Harness<App>::Modules& m){
         duckVk.RecordCommands(cmds, m.vkmod.windowSize, frameIndex);
         duckVk.EndRecordCommands(cmds, m.vkmod.windowSize, *indexVk.coltex.resource, *indexVk.idtex.resource);
 
-        indexVk.BeginRecordCommands(cmds, m.vkmod.windowSize, imageIndex, m.vkmod.ssc, m.vkmod.sscdepth);
+        indexVk.BeginRecordCommands(cmds, m.vkmod.windowSize, imageIndex, m.vkmod.ssc, m.vkmod.sscdepth, frameIndex);
         indexVk.RecordCommands(cmds, m.vkmod.windowSize, imageIndex, m.vkmod.ssc, m.vkmod.sscdepth);
         m.guimod.RecordRenderCommands(frameIndex, m.vkmod);
         indexVk.EndRecordCommands(cmds, m.vkmod.windowSize, imageIndex, m.vkmod.ssc, m.vkmod.sscdepth);

@@ -98,6 +98,7 @@ StagingBuffer StagingBuffer::BuildForUpload(FullDevice& vk, uint32_t size){
     };
 
     return  {
+        .bb = bb,
         .buf = bb.Build(vk),
         .size = size
     };
@@ -122,6 +123,7 @@ StagingBuffer StagingBuffer::BuildForDownload(FullDevice &vk, uint32_t size){
     };
 
     return {
+        .bb = bb,
         .buf = bb.Build(vk),
         .size = size
     };
@@ -129,4 +131,11 @@ StagingBuffer StagingBuffer::BuildForDownload(FullDevice &vk, uint32_t size){
 
 void StagingBuffer::Destroy(FullDevice& vk){
     buf.Destroy(vk);
+}
+
+void StagingBuffer::Resize(FullDevice &vk, uint32_t size){
+    Destroy(vk);
+    this->size = size;
+    this->bb.defBufferCI.size = size;
+    this->buf = bb.Build(vk);
 }
