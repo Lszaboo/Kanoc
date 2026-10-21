@@ -8,7 +8,6 @@
 #include "kanoc/shaders.hpp"
 #include "kanoc/textures.hpp"
 #include "kanoc/namedresource.hpp"
-#include "kanoc/uniforms.hpp"
 #include <algorithm>
 #include <cassert>
 #include <glm/ext/vector_int2.hpp>
@@ -243,7 +242,10 @@ class ResourceOwners{
         HandleOwner<VkDescriptorSetLayout> descriptorlayouts;
         WrapperOwner<Descriptors> descriptorpools;
 
-        WrapperOwner<ShaderDataBuffer> uniforms;
+        WrapperOwner<ShaderBuffer> shaderbuffers;
+        WrapperOwner<StagingBuffer> stagingbuffers;
+
+        HandleOwner<VkFence> fences;
 
         void Init(FullDevice* vk){
             models.BindDevice(vk);
@@ -270,8 +272,14 @@ class ResourceOwners{
             descriptorpools.BindDevice(vk);
             descriptorpools.name = "descriptorpools";
 
-            uniforms.BindDevice(vk);
-            uniforms.name = "uniforms";
+            shaderbuffers.BindDevice(vk);
+            shaderbuffers.name = "shaderbuffers";
+
+            stagingbuffers.BindDevice(vk);
+            stagingbuffers.name = "stagingbuffers";
+
+            fences.BindDevice(vk);
+            fences.name = "fences";
         }
 
         FullDevice* device(){

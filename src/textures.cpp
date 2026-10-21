@@ -47,7 +47,7 @@ void SamplerTexture::InitFromFile(FullDevice& vk, VkCommandPool& cbpool, Graphic
     createImageAndView(vk);
 
     // staging buffer for image
-    StagingBuffer imgStgBuf = StagingBuffer::Build(vk, (uint32_t)ktxTexture->dataSize, (char*)ktxTexture->pData);
+    StagingBuffer imgStgBuf = StagingBuffer::BuildForUpload(vk, (uint32_t)ktxTexture->dataSize, (char*)ktxTexture->pData);
 
     // cb
     OneTimeCB cb;

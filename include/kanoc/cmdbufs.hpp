@@ -5,6 +5,9 @@
 #include "kanoc/vkwrap.hpp"
 #include "kanoc/devices.hpp"
 
+void DestroyVkHandle(FullDevice& vk, VkFence& fence);
+VkFence BuildFence(FullDevice& vk, VkFenceCreateInfo&& fenceci);
+
 class OneTimeCB{
     public:
         VkFence fence;

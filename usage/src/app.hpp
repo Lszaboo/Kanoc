@@ -29,7 +29,6 @@
 #include "kanoc/pipelines.hpp"
 #include "kanoc/shaders.hpp"
 #include "kanoc/textures.hpp"
-#include "kanoc/uniforms.hpp"
 #include "kanoc/vkwrap.hpp"
 #include "kanoc/glfw_module.hpp"
 #include "kanoc/vk_module.hpp"
@@ -46,6 +45,8 @@ class IndexVK{
         Named<DepthTexture*> depth; // Depth for the scene.
         Named<SamplerTexture*> coltex; // Color Texture of the scene.
         Named<SamplerTexture*> idtex; // Index of objects is rendered into this texture.
+        std::array<Named<StagingBuffer*>, VkModule::maxFramesInFlight> idbufs; // Downloads idtex pixels from GPU, and can be accessed via Host (CPU).
+        std::array<Named<VkFence>, VkModule::maxFramesInFlight> idfences; // Host (CPU) must wait on these fences for idtex Download into idbufs[i].
 
         Named<VkShaderModule> combinerShader;
         Named<VkDescriptorSetLayout> combinerDescriptorLayout;
@@ -84,7 +85,7 @@ class DuckVk{
         Named<VkDescriptorSetLayout> descriptorlayout;
 
         // uniforms per frames-in-flight, because the CPU will upload while a frame is processed.
-        std::array<Named<ShaderDataBuffer*>, VkModule::maxFramesInFlight> uniforms;
+        std::array<Named<ShaderBuffer*>, VkModule::maxFramesInFlight> uniforms;
 
         void Init(VkModule& vkmod, IndexVK& indexVk, ResourceOwners& resources);
         void BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, SamplerTexture& coltex, DepthTexture& coldepth, SamplerTexture& idtex);

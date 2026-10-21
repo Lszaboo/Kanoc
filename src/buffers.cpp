@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <vulkan/vulkan_core.h>
 
 #include "kanoc/chk.hpp"
 #include "kanoc/devices.hpp"
@@ -12,7 +13,10 @@ void Buffer::Destroy(FullDevice &vk){
 
 Buffer BufferBuilder::Build(FullDevice& vk){
     Buffer buf;
-    chk(vmaCreateBuffer(vk.vma.allocator, &bufferCI, &bufferAllocCI, &buf.handle, &buf.allocation, &buf.allocationInfo));
+
+    defBufferCI.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    chk(vmaCreateBuffer(vk.vma.allocator, &defBufferCI, &defBufferAllocCI, &buf.handle, &buf.allocation, &buf.allocationInfo));
+
     return buf;
 }
 
@@ -54,12 +58,11 @@ ObjModel ObjModel::Build(FullDevice& vk, const std::string& path){
     VkDeviceSize indexSize = { sizeof(uint16_t) * indices.size() };
 
     BufferBuilder bb;
-    bb.bufferCI = {
-        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+    bb.defBufferCI = {
         .size = vertexSize + indexSize,
         .usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT
     };
-    bb.bufferAllocCI = {
+    bb.defBufferAllocCI = {
         // try and give me DEVICE_LOCAL (VRAM) and HOST_ACCES-able (CPU) memory.
         // BAR and Shared Memory works here.
         // it can fail, by giving me DEVICE_LOCAL not HOST_ACCES-able memory
@@ -82,15 +85,14 @@ void ObjModel::Destroy(FullDevice &vk){
     buf.Destroy(vk);
 }
 
-StagingBuffer StagingBuffer::Build(FullDevice& vk, uint32_t size){
+StagingBuffer StagingBuffer::BuildForUpload(FullDevice& vk, uint32_t size){
     BufferBuilder bb;
 
-    bb.bufferCI = {
-        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+    bb.defBufferCI = {
         .size = size,
-        .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT
+        .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT // Can upload to GPU from it.
     };
-    bb.bufferAllocCI = {
+    bb.defBufferAllocCI = {
         .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT,
         .usage = VMA_MEMORY_USAGE_AUTO
     };
@@ -101,16 +103,30 @@ StagingBuffer StagingBuffer::Build(FullDevice& vk, uint32_t size){
     };
 }
 
-StagingBuffer StagingBuffer::Build(FullDevice& vk, uint32_t size, char* data){
-    StagingBuffer sbuf = Build(vk, size);
+StagingBuffer StagingBuffer::BuildForUpload(FullDevice& vk, uint32_t size, char* data){
+    StagingBuffer sbuf = BuildForUpload(vk, size);
     memcpy(sbuf.buf.allocationInfo.pMappedData, data, size);
     return  sbuf;
 }
 
-void StagingBuffer::Destroy(FullDevice& vk){
-    buf.Destroy(vk);
+StagingBuffer StagingBuffer::BuildForDownload(FullDevice &vk, uint32_t size){
+    BufferBuilder bb;
+
+    bb.defBufferCI = {
+        .size = size,
+        .usage = VK_BUFFER_USAGE_TRANSFER_DST_BIT // Can download from GPU to it.
+    };
+    bb.defBufferAllocCI = {
+        .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT,
+        .usage = VMA_MEMORY_USAGE_AUTO
+    };
+
+    return {
+        .buf = bb.Build(vk),
+        .size = size
+    };
 }
 
-void VertexBuffer::Destroy(FullDevice &vk){
-    vmaDestroyBuffer(vk.vma.allocator, handle, allocation);
+void StagingBuffer::Destroy(FullDevice& vk){
+    buf.Destroy(vk);
 }

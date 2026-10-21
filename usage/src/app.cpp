@@ -11,7 +11,6 @@
 #include "kanoc/imagebarriers.hpp"
 #include "kanoc/pipelines.hpp"
 #include "kanoc/textures.hpp"
-#include "kanoc/uniforms.hpp"
 #include <GLFW/glfw3.h>
 #include <cassert>
 #include <cmath>
@@ -56,6 +55,14 @@ void IndexVK::Init(VkModule& vkmod, ResourceOwners& resources){
     auto index_texture = SamplerTexture();
     index_texture.InitIDReadWrite(vkmod.vk, vkmod.windowSize);
     idtex = resources.samplertextures.Add("Index_Index_Texture", std::move(index_texture));
+
+    uint32_t idtexsize = static_cast<uint32_t>(vkmod.windowSize.x * vkmod.windowSize.y) * sizeof(uint32_t);
+    for (int i = 0; i < VkModule::maxFramesInFlight; i++) {
+        std::string name = "Index_Index_Buffer" + std::to_string(i);
+        idbufs[i] = resources.stagingbuffers.Add(name, StagingBuffer::BuildForDownload(vkmod.vk, idtexsize));
+        name = "Index_Index_Fence" + std::to_string(i);
+        idfences[i] = resources.fences.Add(name, BuildFence(vkmod.vk, {}));
+    }
 
     VkShaderModule combiner_shader = {VK_NULL_HANDLE};
     vkmod.slang.LoadAndCompile(vkmod.vk, "shaders/combiner.slang", combiner_shader);
@@ -228,42 +235,42 @@ void IndexVK::BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize
     // old: barrier transforms from this layout
     // new: to this layout
     // src -> barrier(old->new) -> dst
-    cmds.ibc.Add(
-        {
-            .srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-            .srcAccessMask = 0,
-            .dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-            .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-            .newLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-            .image = ssc.images[nextsscimage], // set color attachment (imageIndex is next image)
-            .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1 }
-        }
-    );
-    cmds.ibc.Add(
-        {
-            .srcStageMask = VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
-            .srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-            .dstStageMask = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT,
-            .dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-            .newLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-            .image = sscdepth.image, // set depth attachment
-            .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, .levelCount = 1, .layerCount = 1 }
-        }
-    );
+
+    //cmds.ibc.Add({
+    //
+    //});
+    //cmds.ibc.RecordAndClearCommands(cmds.cbs);
+
+    cmds.ibc.Add({
+        .srcStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .srcAccessMask = 0,
+        .dstStageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+        .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .newLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+        .image = ssc.images[nextsscimage], // set color attachment (imageIndex is next image)
+        .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 1, .layerCount = 1 }
+    });
+    cmds.ibc.Add({
+        .srcStageMask = VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
+        .srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+        .dstStageMask = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT,
+        .dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+        .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .newLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+        .image = sscdepth.image, // set depth attachment
+        .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, .levelCount = 1, .layerCount = 1 }
+    });
     cmds.ibc.RecordAndClearCommands(cmds.cb);
 
     // setup dynamic rendering info
-    cmds.drc.Add(
-        {
-            .imageView = ssc.views[nextsscimage],
-            .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-            .clearValue{.color{ 0.0f, 0.0f, 0.2f, 1.0f }}
-        }
-    );
+    cmds.drc.Add({
+        .imageView = ssc.views[nextsscimage],
+        .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
+        .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+        .clearValue{.color{ 0.0f, 0.0f, 0.2f, 1.0f }}
+    });
     cmds.drc.depth = {
         .imageView = sscdepth.view,
         .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
@@ -329,7 +336,7 @@ void DuckVk::Init(VkModule& vkmod, IndexVK& indexVk, ResourceOwners &resources){
 
     for (auto i = 0; i < VkModule::maxFramesInFlight; i++) {
         std::string name = "Duck_Uniform_Frame" + std::to_string(i);
-        uniforms[i] = resources.uniforms.Add(name, ShaderDataBuffer::Build<DuckVk::Uniforms>(vkmod.vk));
+        uniforms[i] = resources.shaderbuffers.Add(name, ShaderBuffer::Build<DuckVk::Uniforms>(vkmod.vk));
     }
 
     InitDescriptors(vkmod, resources);

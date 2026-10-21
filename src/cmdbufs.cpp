@@ -3,11 +3,19 @@
 #include "kanoc/chk.hpp"
 #include "kanoc/devices.hpp"
 
+void DestroyVkHandle(FullDevice &vk, VkFence &fence){
+    vkDestroyFence(vk.ldevice.handle, fence, nullptr);
+}
+
+VkFence BuildFence(FullDevice& vk, VkFenceCreateInfo&& fenceci){
+    VkFence fence = {VK_NULL_HANDLE};
+    fenceci.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    chk(vkCreateFence(vk.ldevice.handle, &fenceci, nullptr, &fence));
+    return fence;
+}
+
 void OneTimeCB::initInBegin(FullDevice& vk, VkCommandPool& cbpool){
-    VkFenceCreateInfo fenceOneTimeCI{
-        .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO
-    };
-    chk(vkCreateFence(vk.ldevice.handle, &fenceOneTimeCI, nullptr, &this->fence));
+    fence = BuildFence(vk, {});
 
     VkCommandBufferAllocateInfo cbOneTimeAI{
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
@@ -18,7 +26,7 @@ void OneTimeCB::initInBegin(FullDevice& vk, VkCommandPool& cbpool){
 }
 
 void OneTimeCB::destroyInEnd(FullDevice& vk){
-    vkDestroyFence(vk.ldevice.handle, this->fence, nullptr);
+    DestroyVkHandle(vk, fence);
 }
 
 void OneTimeCB::Begin(FullDevice& vk, VkCommandPool &cbpool){

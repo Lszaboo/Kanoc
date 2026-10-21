@@ -29,8 +29,8 @@ struct Buffer{
  */
 class BufferBuilder{
     public:
-        VkBufferCreateInfo bufferCI;
-        VmaAllocationCreateInfo bufferAllocCI;
+        VkBufferCreateInfo defBufferCI;
+        VmaAllocationCreateInfo defBufferAllocCI;
 
         Buffer Build(FullDevice& vk);
 };
@@ -56,9 +56,9 @@ class ObjModel{
 };
 
 /*
- * Buffer mostly used for:
+ * StagingBuffer mostly used for:
  * - uploading data to GPU through it.
- * - reading data from the GPU through it.
+ * - downloading data from the GPU through it.
  * Use buf.allocationInfo.pMappedData to acces mapped pointer.
  * Use (char*) for data read and write.
  */
@@ -67,18 +67,42 @@ class StagingBuffer{
         Buffer buf;
         uint32_t size;
 
-        static StagingBuffer Build(FullDevice& vk, uint32_t size);
-        static StagingBuffer Build(FullDevice& vk, uint32_t size, char* data);
+        static StagingBuffer BuildForUpload(FullDevice& vk, uint32_t size);
+        static StagingBuffer BuildForUpload(FullDevice& vk, uint32_t size, char* data);
+        static StagingBuffer BuildForDownload(FullDevice& vk, uint32_t size);
         void Destroy(FullDevice& vk);
 };
 
-class VertexBuffer {
-    public:
-        VkBuffer handle = {VK_NULL_HANDLE};
-        VmaAllocation allocation = {VK_NULL_HANDLE};
+struct ShaderBuffer {
+    Buffer buf;
+	VkDeviceAddress deviceAddress{};
 
-        uint32_t indexCount;
-        uint32_t vertexCount;
+	template<typename UniformT>
+	static ShaderBuffer Build(FullDevice& vk){
+	    BufferBuilder bb;
+		bb.defBufferCI = {
+            .size = sizeof(UniformT),
+            .usage = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT
+        };
+		bb.defBufferAllocCI = {
+            .flags =    VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                        VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
+                        VMA_ALLOCATION_CREATE_MAPPED_BIT,
+            .usage = VMA_MEMORY_USAGE_AUTO
+		};
+		Buffer buf = bb.Build(vk);
 
-        void Destroy(FullDevice& vk);
+		VkBufferDeviceAddressInfo uBufferBdaInfo{
+            .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
+            .buffer = buf.handle
+        };
+		return ShaderBuffer{
+		    .buf = buf,
+			.deviceAddress = vkGetBufferDeviceAddress(vk.ldevice.handle, &uBufferBdaInfo)
+		};
+	}
+
+	void Destroy(FullDevice& vk){
+	    buf.Destroy(vk);
+	}
 };
