@@ -1,4 +1,5 @@
 #include "app.hpp"
+#include "imgui.h"
 #include "kanoc/harness.hpp"
 #include "kanoc/vk_module.hpp"
 #include "kanoc/chk.hpp"
@@ -15,6 +16,7 @@
 #include <cassert>
 #include <cmath>
 #include <cstdint>
+#include <glm/common.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/vector_float3.hpp>
 #include <ostream>
@@ -643,6 +645,46 @@ void DuckVk::EndRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, S
 
 
 
+void GuiVk::update(ImGuiModule& guimod, VkModule& vkmod, VkFence& fence, StagingBuffer& idbuf, const uint32_t& frameIndex, const uint32_t& prevIndex){
+    if (ImGui::Begin("Demo", &shown)){
+        ImGui::Text("A demo window.");
+
+        ImGui::Text("Resolution: %d x %d", vkmod.windowSize.x, vkmod.windowSize.y);
+
+        /*
+            for (int i = 0; i< 10; i++) {
+                int frameIdx = i;
+                int flightIdx = i % 3;
+                int prevIdx = (flightIdx-1)==-1 ? (3-1) : (flightIdx-1);
+                ImGui::Text("%d -> %d -> %d", frameIdx, flightIdx, prevIdx);
+            }
+        */
+
+        if (ImGui::Button("Wait for indexes...")) {
+            ids = std::to_string(frameIndex) + " -> " + std::to_string(prevIndex) + "\n";
+
+            chk(vkWaitForFences(vkmod.vk.ldevice.handle, 1, &fence, true, UINT64_MAX));
+
+            sleep(3);
+            /*
+            for (int x=0; x<vkmod.windowSize.x; x++) {
+                for (int y=0; y<vkmod.windowSize.y; y++) {
+                    uint32_t id = static_cast<uint32_t*>(idbuf.buf.allocationInfo.pMappedData)[x+y*vkmod.windowSize.x];
+
+                    ids += (id != 0) ? std::to_string(id) : "`";
+                }
+                ids += "\n";
+            }
+            */
+        }
+        ImGui::TextUnformatted(ids.c_str());
+
+    }
+    ImGui::End();
+}
+
+
+
 void App::Init(Harness<App>::Modules& m){
     uint32_t deviceID = 0;
 
@@ -691,8 +733,12 @@ void App::updateShaderData(Harness<App>::Modules& m){
     memcpy(duckVk.uniforms[frameIndex].resource->buf.allocationInfo.pMappedData, &shaderData, sizeof(DuckVk::Uniforms));
 }
 
-void App::updateFrameIndex(Harness<App>::Modules& m){
-    frameIndex = (frameIndex + 1) % m.vkmod.maxFramesInFlight;
+void App::updateFrameIndex(){
+    frameIndex = (frameIndex + 1) % VkModule::maxFramesInFlight;
+}
+
+uint32_t App::previousFrameIdx(){
+    return (frameIndex-1)==-1 ? (VkModule::maxFramesInFlight-1) : (frameIndex-1);
 }
 
 void App::pollEvents(Harness<App>::Modules& m){
@@ -705,31 +751,32 @@ void App::pollEvents(Harness<App>::Modules& m){
     float y = -5.0;
     camPos = glm::vec3(cos(currentTime),0.0,sin(currentTime)) * 15.0f + glm::vec3(0.0,y,0.0);
     //camPos = glm::vec3(1,1,1) * float(fabs(cos(currentTime)));
-
-    int w = m.vkmod.windowSize.x;
-    int h = m.vkmod.windowSize.y;
-
-    glfwGetFramebufferSize(m.glfwmod.window, &w, &h);
-    if (w != m.vkmod.windowSize.x || h != m.vkmod.windowSize.y) {
-        m.vkmod.windowSize = {w, h};
-        updateSwapchain = true;
-    }
-
 }
 
 void App::Play(Harness<App>::Modules& m){
     printApiData(m);
     m.glfwmod.printWindowDimensions();
 
-    while ( !glfwWindowShouldClose( m.glfwmod.window ) )
-    {
+    while (!glfwWindowShouldClose(m.glfwmod.window)){
+        updateFrameIndex();
+        m.vkmod.updateFence(frameIndex); // Wait for this frame fence and reset it
+        m.vkmod.updateImage(frameIndex,imageIndex,updateSwapchain); // Acquire next ssc image.
+        while (updateSwapchain) {
+            chk(vkDeviceWaitIdle(m.vkmod.vk.ldevice.handle));
+            m.vkmod.recreateSwapchains(m.glfwmod);
+            m.guimod.recreateImGui(m.vkmod);
+            indexVk.Resize(m.vkmod);
+            m.vkmod.updateImage(frameIndex,imageIndex,updateSwapchain);
+        }
+
         updateDeltaTime(m);
 
-        m.guimod.beginFrame();
-        m.guimod.updateFrame();
+        pollEvents(m);
 
-        m.vkmod.updateFence(frameIndex);
-        m.vkmod.updateImage(frameIndex,imageIndex,updateSwapchain);
+        m.guimod.beginFrame();
+        guiVk.update(m.guimod, m.vkmod, m.vkmod.fences[previousFrameIdx()], *indexVk.idbufs[previousFrameIdx()].resource, frameIndex, previousFrameIdx());
+        m.guimod.endFrame();
+
         updateShaderData(m);
 
         cmds.cb = m.vkmod.commandBuffers[frameIndex];
@@ -746,17 +793,6 @@ void App::Play(Harness<App>::Modules& m){
 
         m.vkmod.EndCBRecordingToSSC(frameIndex);
         m.vkmod.updateSubmitCommandBuffer(frameIndex,imageIndex);
-        updateFrameIndex(m);
         m.vkmod.updatePresentImage(imageIndex,updateSwapchain);
-
-        pollEvents(m);
-
-        if (updateSwapchain) {
-            chk(vkDeviceWaitIdle(m.vkmod.vk.ldevice.handle));
-            m.vkmod.recreateSwapchains(m.glfwmod);
-            m.guimod.recreateImGui(m.vkmod);
-            indexVk.Resize(m.vkmod);
-            updateSwapchain = false;
-        }
     }
 }

@@ -97,6 +97,14 @@ class DuckVk{
         void InitPipeline(VkModule& vkmod, IndexVK& indexVk, ResourceOwners& resources);
 };
 
+class GuiVk{
+    public:
+        bool shown = true;
+        std::string ids ="";
+
+        void update(ImGuiModule& guimod, VkModule& vkmod, VkFence& fence, StagingBuffer& idbuf, const uint32_t& frameIndex, const uint32_t& prevIndex);
+};
+
 class App{
     public:
         // functions
@@ -114,6 +122,9 @@ class App{
         // Duck rendering resources
         DuckVk duckVk;
 
+        // Gui rendering resources
+        GuiVk guiVk;
+
         // Command recording helpers
         CommandRecorders cmds;
 
@@ -122,7 +133,8 @@ class App{
 
         void updateDeltaTime(Harness<App>::Modules& m);
         void updateShaderData(Harness<App>::Modules& m);
-        void updateFrameIndex(Harness<App>::Modules& m);
+        void updateFrameIndex();
+        uint32_t previousFrameIdx();
         void pollEvents(Harness<App>::Modules& m);
 
 

@@ -13,14 +13,13 @@ class ImGuiModule{
         // fields
         ImGui_ImplVulkan_InitInfo initInfo = {};
         VkDescriptorPool pool = {VK_NULL_HANDLE};
-        bool demo = true;
 
         // functions
         void Init(GLFWModule &glfw, VkModule &vk, const std::string& workingPath);
         void initDesriptorPool(VkModule &vk);
 
         void beginFrame();
-        void updateFrame();
+        void endFrame();
         void RecordRenderCommands(uint32_t &frameIndex, VkModule &vk);
         void recreateImGui(VkModule &vk);
 

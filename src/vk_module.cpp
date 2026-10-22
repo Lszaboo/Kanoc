@@ -390,7 +390,7 @@ void VkModule::updatePresentImage(uint32_t& imageIndex, bool& updateSwapchain){
 }
 
 void VkModule::recreateSwapchains(GLFWModule &glfw){
-    glfw.printWindowDimensions();
+    //glfw.printWindowDimensions();
     glfwGetFramebufferSize(glfw.window, &windowSize.x, &windowSize.y);
 
     // swapchain

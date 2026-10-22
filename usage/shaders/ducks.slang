@@ -50,7 +50,7 @@ FsOut main(VsOut in){
     FsOut out;
 
     out.col = float4(albedos[0].Sample(in.uv).rgb, 1.0);
-    out.id = in.id;
+    out.id = in.id + 1;
 
     return out;
 }

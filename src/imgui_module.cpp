@@ -64,17 +64,11 @@ void ImGuiModule::beginFrame(){
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
+    ImGui::PushFont(textFont);
 }
 
-void ImGuiModule::updateFrame(){
-    if (demo) {
-        ImGui::PushFont(textFont);
-        if (ImGui::Begin("Demo", &demo)){
-            ImGui::Text("A demo window.");
-        }
-        ImGui::End();
-        ImGui::PopFont();
-    }
+void ImGuiModule::endFrame(){
+    ImGui::PopFont();
 }
 
 void ImGuiModule::RecordRenderCommands(uint32_t &frameIndex, VkModule &vk){

@@ -1,4 +1,5 @@
 #pragma once
+#include "kanoc/cmdhelpers.hpp"
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <vulkan/vulkan_core.h>
@@ -25,7 +26,7 @@ static inline void chk_obj(bool val){
 }
 
 static inline void chkSwapchain(VkResult result, bool& updateSwapchain) {
-	if (result < VK_SUCCESS) {
+    if (result < VK_SUCCESS) {
 		if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 			updateSwapchain = true;
 			return;
@@ -33,6 +34,7 @@ static inline void chkSwapchain(VkResult result, bool& updateSwapchain) {
 		std::cerr << "Vulkan call returned an error (" << result << ")\n";
 		exit(result);
 	}
+    updateSwapchain = false;
 }
 
 static inline void chk(VkFormat result){
