@@ -1,6 +1,8 @@
 #pragma once
 #include <cstdint>
 
+#include <glm/ext/vector_int2.hpp>
+#include <vector>
 #include <vulkan/vulkan_core.h>
 #include <GLFW/glfw3.h>
 
@@ -100,9 +102,13 @@ class DuckVk{
 class GuiVk{
     public:
         bool shown = true;
-        std::string ids ="";
+        bool waiteveryframe = false;
+        int sampleStep = 10;
+        std::vector<uint32_t> ids;
+        glm::ivec2 iddim;
 
         void update(ImGuiModule& guimod, VkModule& vkmod, VkFence& fence, StagingBuffer& idbuf, const uint32_t& frameIndex, const uint32_t& prevIndex);
+        void fillIds(VkModule& vkmod, StagingBuffer& idbuf);
 };
 
 class App{

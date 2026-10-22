@@ -2,6 +2,7 @@
 #include "kanoc/vk_module.hpp"
 #include "kanoc/chk.hpp"
 #include "imgui.h"
+#include "implot.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
 #include <vulkan/vulkan_core.h>
@@ -9,6 +10,8 @@
 void ImGuiModule::Init(GLFWModule &glfw, VkModule &vk, const std::string& workingPath){
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
+    ImPlot::CreateContext();
+
     ImGuiIO &io = ImGui::GetIO();
     ImGui::StyleColorsLight();
 
@@ -82,6 +85,8 @@ void ImGuiModule::Destroy(VkModule &vk){
 
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
+
+    ImPlot::DestroyContext();
     ImGui::DestroyContext();
 
     vkDestroyDescriptorPool(vk.vk.ldevice.handle, pool, nullptr);

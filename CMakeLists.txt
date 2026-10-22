@@ -30,7 +30,7 @@ macro(setup_imgui)
   FetchContent_Declare(
       imgui
       GIT_REPOSITORY https://github.com/ocornut/imgui.git
-      GIT_TAG v1.92.9b
+      GIT_TAG v1.93.0
   )
   FetchContent_MakeAvailable(imgui)
 
@@ -61,6 +61,30 @@ macro(setup_imgui)
   add_library(imgui::imgui ALIAS imgui)
 endmacro()
 
+macro(setup_implot)
+  FetchContent_Declare(
+    implot
+    GIT_REPOSITORY https://github.com/epezent/implot.git
+    GIT_TAG v1.0
+  )
+  FetchContent_MakeAvailable(implot)
+
+  add_library(implot STATIC
+    ${implot_SOURCE_DIR}/implot.cpp
+    ${implot_SOURCE_DIR}/implot_items.cpp
+  )
+
+  target_include_directories(implot PUBLIC
+    ${implot_SOURCE_DIR}
+  )
+
+  target_link_libraries(implot PUBLIC
+    imgui
+  )
+
+  add_library(implot::implot ALIAS implot)
+endmacro()
+
 macro(setup_vma)
   # pull VMA from github
   FetchContent_Declare(
@@ -82,6 +106,7 @@ macro(setup_tinyobjloader)
 endmacro()
 
 setup_imgui()
+setup_implot()
 setup_vma()
 setup_tinyobjloader()
 
@@ -106,6 +131,7 @@ target_link_libraries(Kanoc PUBLIC
     glm::glm
     glfw
     imgui::imgui
+    implot::implot
     GPUOpen::VulkanMemoryAllocator
     tinyobjloader
     ktx

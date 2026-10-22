@@ -33,20 +33,13 @@ VsOut main(uint vidx: SV_VulkanVertexID){
 
 [shader("fragment")]
 float4 main(VsOut input){
-
-    //float2 screencoord = float2(input.uv.x * 1280.0f,input.uv.y * 720.0f);
-    //uint2 pixelCoord = uint2(screencoord.xy);
-    //uint objectId = id.Load(int3(pixelCoord, 0));
     uint objectId = id.Sample(input.uv);
 
-
-    //if (pixelCoord.x>640){
-    //    return float4(1.0,0.0,0.0,1.0);
+    //if (objectId != 0){
+    //    return float4(0.0,1.0,0.0,1.0);
+    //}else{
+    //    return color.Sample(input.uv);
     //}
 
-    if (objectId != 0){
-        return float4(0.0,1.0,0.0,1.0);
-    }else{
-        return color.Sample(input.uv);
-    }
+    return color.Sample(input.uv);
 }

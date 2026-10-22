@@ -1,5 +1,7 @@
 #include "app.hpp"
 #include "imgui.h"
+#include "implot.h"
+#include "kanoc/cmdhelpers.hpp"
 #include "kanoc/harness.hpp"
 #include "kanoc/vk_module.hpp"
 #include "kanoc/chk.hpp"
@@ -16,9 +18,11 @@
 #include <cassert>
 #include <cmath>
 #include <cstdint>
+#include <cstring>
 #include <glm/common.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/vector_float3.hpp>
+#include <glm/ext/vector_int2.hpp>
 #include <ostream>
 #include <string>
 #include <vector>
@@ -651,36 +655,55 @@ void GuiVk::update(ImGuiModule& guimod, VkModule& vkmod, VkFence& fence, Staging
 
         ImGui::Text("Resolution: %d x %d", vkmod.windowSize.x, vkmod.windowSize.y);
 
-        /*
-            for (int i = 0; i< 10; i++) {
-                int frameIdx = i;
-                int flightIdx = i % 3;
-                int prevIdx = (flightIdx-1)==-1 ? (3-1) : (flightIdx-1);
-                ImGui::Text("%d -> %d -> %d", frameIdx, flightIdx, prevIdx);
-            }
-        */
+        ImGui::Checkbox("Wait for indexes every frame.", &waiteveryframe);
 
-        if (ImGui::Button("Wait for indexes...")) {
-            ids = std::to_string(frameIndex) + " -> " + std::to_string(prevIndex) + "\n";
-
+        if (waiteveryframe) {
             chk(vkWaitForFences(vkmod.vk.ldevice.handle, 1, &fence, true, UINT64_MAX));
-
-            sleep(3);
-            /*
-            for (int x=0; x<vkmod.windowSize.x; x++) {
-                for (int y=0; y<vkmod.windowSize.y; y++) {
-                    uint32_t id = static_cast<uint32_t*>(idbuf.buf.allocationInfo.pMappedData)[x+y*vkmod.windowSize.x];
-
-                    ids += (id != 0) ? std::to_string(id) : "`";
-                }
-                ids += "\n";
+            fillIds(vkmod, idbuf);
+        }else{
+            ImGui::SameLine();
+            if (ImGui::Button("Wait for indexes...")) {
+                chk(vkWaitForFences(vkmod.vk.ldevice.handle, 1, &fence, true, UINT64_MAX));
+                fillIds(vkmod, idbuf);
             }
-            */
         }
-        ImGui::TextUnformatted(ids.c_str());
+
+        if (!ids.empty()) {
+            ImGui::Text("iddim: %d x %d", iddim.x, iddim.y);
+            if (ImPlot::BeginPlot("ids plot", ImVec2(iddim.x*5,iddim.y*5), ImPlotFlags_NoInputs)) {
+                ImPlot::PlotHeatmap(
+                    "ids",
+                    ids.data(), iddim.y, iddim.x,
+                    0,
+                    0,
+                    nullptr
+                );
+                ImPlot::EndPlot();
+            }
+        }
 
     }
     ImGui::End();
+}
+
+void GuiVk::fillIds(VkModule& vkmod, StagingBuffer& idbuf){
+    //int itemnum = vkmod.windowSize.x*vkmod.windowSize.y;
+    //ids.resize(itemnum);
+    //memcpy(ids.data(), static_cast<uint32_t*>(idbuf.buf.allocationInfo.pMappedData), itemnum*sizeof(uint32_t));
+
+    ids.clear();
+    iddim = vkmod.windowSize / sampleStep;
+
+    for (int y=0; y<iddim.y; y+=1) {
+        for (int x=0; x<iddim.x; x+=1) {
+            int sampledX = x*sampleStep;
+            int sampledY = y*sampleStep;
+            int sampledIdx = (sampledX+sampledY*vkmod.windowSize.x);
+            uint32_t num = (static_cast<uint32_t*>(idbuf.buf.allocationInfo.pMappedData))[sampledIdx];
+
+            ids.push_back(num);
+        }
+    }
 }
 
 
