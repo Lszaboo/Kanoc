@@ -19,6 +19,7 @@
 #include <cmath>
 #include <cstdint>
 #include <cstring>
+#include <functional>
 #include <glm/common.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/ext/vector_float3.hpp>
@@ -235,6 +236,11 @@ void IndexVK::Resize(VkModule& vkmod){
         .pImageInfo = &imageinfos[1]
     };
     combinerDescriptors.resource->WriteSet(vkmod.vk, writeDescSet2);
+}
+
+uint32_t IndexVK::readId(glm::ivec2 windowSize, glm::ivec2 mouseCoord, uint32_t frameIndex){
+    int idx = mouseCoord.x + mouseCoord.y * windowSize.x;
+    return static_cast<uint32_t*>(idbufs[frameIndex].resource->buf.allocationInfo.pMappedData)[idx];
 }
 
 void IndexVK::BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, uint32_t& nextsscimage, SurfaceSwapChain& ssc, DepthTexture& sscdepth, uint32_t& frameIndex){
@@ -459,7 +465,7 @@ void DuckVk::InitPipeline(VkModule &vkmod, IndexVK& indexVk, ResourceOwners &res
 
     // pushconstants and descriptors in the pipeline.
     pb.defPushConstants.push_back({
-            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+            .stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
             .size = sizeof(VkDeviceAddress)
         });
     pb.defDescriptorLayouts.push_back(descriptorlayout.resource);
@@ -570,7 +576,7 @@ void DuckVk::BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize,
             .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
             .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
             .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-            .clearValue{.color{ 0.0f, 0.0f, 0.2f, 1.0f }}
+            .clearValue{.color{ 0.05f, 0.06f, 0.075f, 1.0f }}
         }
     );
     cmds.drc.Add(
@@ -613,7 +619,7 @@ void DuckVk::RecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, uint
     vkCmdBindDescriptorSets(cmds.cb, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.resource->layout, 0, 1, &descriptorpool.resource->sets[0], 0, nullptr);
 
     // add uniforms
-    vkCmdPushConstants(cmds.cb, pipeline.resource->layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(VkDeviceAddress), &uniforms[frameIndex].resource->deviceAddress);
+    vkCmdPushConstants(cmds.cb, pipeline.resource->layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(VkDeviceAddress), &uniforms[frameIndex].resource->deviceAddress);
 
     // vertex buffer
     VkDeviceSize vOffset{ 0 };
@@ -649,28 +655,36 @@ void DuckVk::EndRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, S
 
 
 
-void GuiVk::update(ImGuiModule& guimod, VkModule& vkmod, VkFence& fence, StagingBuffer& idbuf, const uint32_t& frameIndex, const uint32_t& prevIndex){
+void GuiVk::update(ImGuiModule& guimod, VkModule& vkmod, VkFence& fence, IndexVK& indexVk, const uint32_t& frameIndex, const uint32_t& prevIndex, glm::vec2& mousePos, uint32_t& id){
     if (ImGui::Begin("Demo", &shown)){
         ImGui::Text("A demo window.");
 
         ImGui::Text("Resolution: %d x %d", vkmod.windowSize.x, vkmod.windowSize.y);
+        ImGui::Text("MousePos: (%.2f;%.2f)", mousePos.x, mousePos.y);
 
-        ImGui::Checkbox("Wait for indexes every frame.", &waiteveryframe);
-
-        if (waiteveryframe) {
+        ImGui::Checkbox("Read under mouse.", &readUnderMouse);
+        if (readUnderMouse) {
             chk(vkWaitForFences(vkmod.vk.ldevice.handle, 1, &fence, true, UINT64_MAX));
-            fillIds(vkmod, idbuf);
+            id = indexVk.readId(vkmod.windowSize, mousePos, frameIndex);
+            ImGui::SameLine();
+            ImGui::Text("Mouse id is: %d", id);
+        }
+
+        ImGui::Checkbox("Plot indexes every frame.", &plotEveryFrame);
+        if (plotEveryFrame) {
+            chk(vkWaitForFences(vkmod.vk.ldevice.handle, 1, &fence, true, UINT64_MAX));
+            fillIds(vkmod, *indexVk.idbufs[prevIndex].resource);
         }else{
             ImGui::SameLine();
             if (ImGui::Button("Wait for indexes...")) {
                 chk(vkWaitForFences(vkmod.vk.ldevice.handle, 1, &fence, true, UINT64_MAX));
-                fillIds(vkmod, idbuf);
+                fillIds(vkmod, *indexVk.idbufs[prevIndex].resource);
             }
         }
 
         if (!ids.empty()) {
             ImGui::Text("iddim: %d x %d", iddim.x, iddim.y);
-            if (ImPlot::BeginPlot("ids plot", ImVec2(iddim.x*5,iddim.y*5), ImPlotFlags_NoInputs)) {
+            if (ImPlot::BeginPlot("ids plot", ImVec2(static_cast<float>(iddim.x)*5,static_cast<float>(iddim.y)*5), ImPlotFlags_NoInputs)) {
                 ImPlot::PlotHeatmap(
                     "ids",
                     ids.data(), iddim.y, iddim.x,
@@ -718,6 +732,11 @@ void App::Init(Harness<App>::Modules& m){
     duckVk.Init(m.vkmod,  indexVk, resources);
 }
 
+void App::cursorPosChanged(GLFWwindow *window, double xpos, double ypos){
+     auto app = static_cast<App*>(glfwGetWindowUserPointer(window));
+     app->mousePos = glm::vec2(xpos, ypos);
+}
+
 void App::Destroy(Harness<App>::Modules& m){
     // App default destructor auto destroys everything currently.
 }
@@ -739,9 +758,9 @@ void App::printApiData(Harness<App>::Modules& m){
 }
 
 void App::updateDeltaTime(Harness<App>::Modules& m){
-    double time = glfwGetTime();
-    deltaTime = time - oldTime;
     oldTime = time;
+    time = glfwGetTime();
+    deltaTime = time - oldTime;
 }
 
 void App::updateShaderData(Harness<App>::Modules& m){
@@ -765,15 +784,12 @@ uint32_t App::previousFrameIdx(){
 }
 
 void App::pollEvents(Harness<App>::Modules& m){
-    double lastTime = glfwGetTime();
-    double currentTime = glfwGetTime();
-    float elapsedTime = static_cast<float>(currentTime - lastTime);
-    lastTime = currentTime;
     glfwPollEvents();
+}
 
+void App::updateAppLogic(Harness<App>::Modules &m){
     float y = -5.0;
-    camPos = glm::vec3(cos(currentTime),0.0,sin(currentTime)) * 15.0f + glm::vec3(0.0,y,0.0);
-    //camPos = glm::vec3(1,1,1) * float(fabs(cos(currentTime)));
+    camPos = glm::vec3(cos(time),0.0,sin(time)) * 15.0f + glm::vec3(0.0,y,0.0);
 }
 
 void App::Play(Harness<App>::Modules& m){
@@ -797,8 +813,10 @@ void App::Play(Harness<App>::Modules& m){
         pollEvents(m);
 
         m.guimod.beginFrame();
-        guiVk.update(m.guimod, m.vkmod, m.vkmod.fences[previousFrameIdx()], *indexVk.idbufs[previousFrameIdx()].resource, frameIndex, previousFrameIdx());
+        guiVk.update(m.guimod, m.vkmod, m.vkmod.fences[previousFrameIdx()], indexVk, frameIndex, previousFrameIdx(), mousePos, shaderData.id);
         m.guimod.endFrame();
+
+        updateAppLogic(m);
 
         updateShaderData(m);
 

@@ -3,8 +3,7 @@ struct UniformData{
     float4x4 proj;
     float4x4 view;
     float4x4 ducks[3];
-    float3 lightpos;
-    uint32_t hoveridx;
+    uint32_t id;
 };
 
 struct VsIn{
@@ -49,8 +48,14 @@ VsOut main(VsIn in, uint idx : SV_VulkanInstanceID){
 FsOut main(VsOut in){
     FsOut out;
 
-    out.col = float4(albedos[0].Sample(in.uv).rgb, 1.0);
     out.id = in.id + 1;
+    out.col = float4(albedos[0].Sample(in.uv).rgb, 1.0);
+
+    if (out.id == udata->id) {
+        out.col *= 2.0;
+        out.col.w = 1.0;
+    }
+
 
     return out;
 }

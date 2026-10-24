@@ -40,10 +40,10 @@ void ImGuiModule::Init(GLFWModule &glfw, VkModule &vk, const std::string& workin
     ImGui_ImplVulkan_Init(&initInfo);
 
     std::string textFontPath = workingPath + "/fonts/Roboto.ttf";
-    textFont = io.Fonts->AddFontFromFileTTF(textFontPath.c_str(),16);
+    textFont = io.Fonts->AddFontFromFileTTF(textFontPath.c_str(),18);
 
     std::string iconFontPath = workingPath + "/fonts/MaterialSymbolsRounded.ttf";
-    iconFont = io.Fonts->AddFontFromFileTTF(iconFontPath.c_str(),24);
+    iconFont = io.Fonts->AddFontFromFileTTF(iconFontPath.c_str(),26);
 }
 
 void ImGuiModule::initDesriptorPool(VkModule &vk){

@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 
+#include <glm/ext/vector_float2.hpp>
 #include <glm/ext/vector_int2.hpp>
 #include <vector>
 #include <vulkan/vulkan_core.h>
@@ -57,6 +58,9 @@ class IndexVK{
 
         void Init(VkModule& vkmod, ResourceOwners& resources);
         void Resize(VkModule& vkmod);
+
+        uint32_t readId(glm::ivec2 windowSize, glm::ivec2 mouseCoord, uint32_t frameIndex);
+
         void BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, uint32_t& nextsscimage, SurfaceSwapChain& ssc, DepthTexture& sscdepth, uint32_t& frameIndex);
         void RecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, uint32_t& nextsscimage, SurfaceSwapChain& ssc, DepthTexture& sscdepth);
         void EndRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, uint32_t& nextsscimage, SurfaceSwapChain& ssc, DepthTexture& sscdepth);
@@ -73,8 +77,7 @@ class DuckVk{
             glm::mat4 projection;
             glm::mat4 view;
             glm::mat4 model[3];
-            glm::vec4 lightPos{ 0.0f, -10.0f, 10.0f, 0.0f };
-            uint32_t selected{1};
+            uint32_t id = 1;
         };
 
         Named<ObjModel*> model;
@@ -102,12 +105,13 @@ class DuckVk{
 class GuiVk{
     public:
         bool shown = true;
-        bool waiteveryframe = false;
+        bool plotEveryFrame = false;
+        bool readUnderMouse = false;
         int sampleStep = 10;
         std::vector<uint32_t> ids;
         glm::ivec2 iddim;
 
-        void update(ImGuiModule& guimod, VkModule& vkmod, VkFence& fence, StagingBuffer& idbuf, const uint32_t& frameIndex, const uint32_t& prevIndex);
+        void update(ImGuiModule& guimod, VkModule& vkmod, VkFence& fence, IndexVK& indexVk, const uint32_t& frameIndex, const uint32_t& prevIndex, glm::vec2& mousePos, uint32_t& id);
         void fillIds(VkModule& vkmod, StagingBuffer& idbuf);
 };
 
@@ -117,6 +121,8 @@ class App{
         void Init(Harness<App>::Modules& m);
         void Destroy(Harness<App>::Modules& m);
         void Play(Harness<App>::Modules& m);
+
+        static void cursorPosChanged(GLFWwindow* window, double xpos, double ypos);
 
     protected:
         // Resources
@@ -142,8 +148,9 @@ class App{
         void updateFrameIndex();
         uint32_t previousFrameIdx();
         void pollEvents(Harness<App>::Modules& m);
+        void updateAppLogic(Harness<App>::Modules& m);
 
-
+        double time = 0.0;
         double oldTime = 0.0;
         double deltaTime = 0.0;
         uint32_t frameIndex = 0;
@@ -152,6 +159,5 @@ class App{
         DuckVk::Uniforms shaderData = {};
         glm::vec3 camPos = { 0.0f, 0.0f, -6.0f };
         glm::vec3 objectRotations[3] = {};
-        double lastMouseX = 0.0;
-        double lastMouseY = 0.0;
+        glm::vec2 mousePos = {};
 };

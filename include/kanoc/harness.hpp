@@ -25,9 +25,13 @@ class Harness{
 
             m.glfwmod.Init();
             m.vkmod.Init(m.glfwmod);
-            m.guimod.Init(m.glfwmod, m.vkmod, workingPath);
 
             app = new AppT();
+
+            glfwSetWindowUserPointer(m.glfwmod.window, app);
+            glfwSetCursorPosCallback(m.glfwmod.window, AppT::cursorPosChanged);
+            m.guimod.Init(m.glfwmod, m.vkmod, workingPath);
+
             app->Init(m);
         }
 
