@@ -32,7 +32,7 @@ class Harness{
             glfwSetCursorPosCallback(m.glfwmod.window, AppT::cursorPosChanged);
             m.guimod.Init(m.glfwmod, m.vkmod, workingPath);
 
-            app->Init(m);
+            app->Init(m, workingPath);
         }
 
         void Destroy(){

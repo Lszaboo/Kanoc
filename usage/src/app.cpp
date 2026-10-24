@@ -32,7 +32,7 @@
 #include <string>
 #include <iostream>
 
-void IndexVK::Init(VkModule& vkmod, ResourceOwners& resources){
+void IndexVK::Init(VkModule& vkmod, ResourceOwners& resources, const std::string& workingPath){
     auto depth_texture = DepthTexture();
     depth_texture.Init(vkmod.vk, vkmod.windowSize);
     depth = resources.depthtextures.Add("Index_Depth_Texture", std::move(depth_texture));
@@ -70,7 +70,7 @@ void IndexVK::Init(VkModule& vkmod, ResourceOwners& resources){
     }
 
     VkShaderModule combiner_shader = {VK_NULL_HANDLE};
-    vkmod.slang.LoadAndCompile(vkmod.vk, "shaders/combiner.slang", combiner_shader);
+    vkmod.slang.LoadAndCompile(vkmod.vk, workingPath + "/shaders/combiner.slang", combiner_shader);
     combinerShader = resources.shaders.Add("Index_Combiner_Shader", std::move(combiner_shader));
 
     InitDescriptors(vkmod, resources);
@@ -387,11 +387,11 @@ void IndexVK::EndRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, 
 
 
 
-void DuckVk::Init(VkModule& vkmod, IndexVK& indexVk, ResourceOwners &resources){
-    model = resources.models.Add("Duck_obj", ObjModel::Build(vkmod.vk, "assets/duck.obj"));
+void DuckVk::Init(VkModule& vkmod, IndexVK& indexVk, ResourceOwners &resources, const std::string& workingPath){
+    model = resources.models.Add("Duck_obj", ObjModel::Build(vkmod.vk, workingPath + "/assets/duck.obj"));
 
     auto duck_texture = SamplerTexture();
-    duck_texture.InitFromFile(vkmod.vk, vkmod.commandPool, vkmod.queue, "assets/duck.ktx");
+    duck_texture.InitFromFile(vkmod.vk, vkmod.commandPool, vkmod.queue, workingPath + "/assets/duck.ktx");
     textures[0] = resources.samplertextures.Add("Duck_Texture", std::move(duck_texture));
 
     for (auto i = 0; i < VkModule::maxFramesInFlight; i++) {
@@ -402,7 +402,7 @@ void DuckVk::Init(VkModule& vkmod, IndexVK& indexVk, ResourceOwners &resources){
     InitDescriptors(vkmod, resources);
 
     VkShaderModule duck_shader = {VK_NULL_HANDLE};
-    vkmod.slang.LoadAndCompile(vkmod.vk, std::string("shaders/ducks.slang"), duck_shader);
+    vkmod.slang.LoadAndCompile(vkmod.vk, std::string(workingPath + "/shaders/ducks.slang"), duck_shader);
     shader = resources.shaders.Add("Duck_Shader", std::move(duck_shader));
 
     InitPipeline(vkmod, indexVk, resources);
@@ -722,14 +722,14 @@ void GuiVk::fillIds(VkModule& vkmod, StagingBuffer& idbuf){
 
 
 
-void App::Init(Harness<App>::Modules& m){
+void App::Init(Harness<App>::Modules& m, const std::string& workingPath){
     uint32_t deviceID = 0;
 
     resources.Init(&m.vkmod.vk);
     resources.name = "App";
 
-    indexVk.Init(m.vkmod, resources);
-    duckVk.Init(m.vkmod,  indexVk, resources);
+    indexVk.Init(m.vkmod, resources, workingPath);
+    duckVk.Init(m.vkmod,  indexVk, resources, workingPath);
 }
 
 void App::cursorPosChanged(GLFWwindow *window, double xpos, double ypos){
