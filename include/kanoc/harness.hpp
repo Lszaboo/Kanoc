@@ -3,7 +3,9 @@
 #include "kanoc/glfw_module.hpp"
 #include "kanoc/imgui_module.hpp"
 #include "kanoc/vk_module.hpp"
+#include <GLFW/glfw3.h>
 #include <filesystem>
+#include <string>
 
 /*
  * Harness for Apps.
@@ -17,22 +19,19 @@ class Harness{
             GLFWModule glfwmod;
             VkModule vkmod;
             ImGuiModule guimod;
+            std::string workingPath;
         };
 
         void Init(const std::string& argvzero){
-            auto dir = std::filesystem::absolute(argvzero).parent_path();
-            std::string workingPath = dir.string();
-
-            m.glfwmod.Init();
-            m.vkmod.Init(m.glfwmod);
-
             app = new AppT();
+            auto dir = std::filesystem::absolute(argvzero).parent_path();
+            m.workingPath = dir.string();
 
-            glfwSetWindowUserPointer(m.glfwmod.window, app);
-            glfwSetCursorPosCallback(m.glfwmod.window, AppT::cursorPosChanged);
-            m.guimod.Init(m.glfwmod, m.vkmod, workingPath);
+            m.glfwmod.Init(app);
+            m.vkmod.Init(m.glfwmod);
+            m.guimod.Init(m.glfwmod, m.vkmod, m.workingPath);
 
-            app->Init(m, workingPath);
+            app->Init(m);
         }
 
         void Destroy(){
@@ -53,4 +52,5 @@ class Harness{
     protected:
         Harness::Modules m;
         AppT* app = nullptr;
+
 };

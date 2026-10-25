@@ -77,7 +77,7 @@ class DuckVk{
             glm::mat4 projection;
             glm::mat4 view;
             glm::mat4 model[3];
-            uint32_t id = 1;
+            uint32_t id = 0;
         };
 
         Named<ObjModel*> model;
@@ -118,11 +118,11 @@ class GuiVk{
 class App{
     public:
         // functions
-        void Init(Harness<App>::Modules& m, const std::string& workingPath);
+        void Init(Harness<App>::Modules& m);
         void Destroy(Harness<App>::Modules& m);
         void Play(Harness<App>::Modules& m);
 
-        static void cursorPosChanged(GLFWwindow* window, double xpos, double ypos);
+        void cursorPosChanged(double xpos, double ypos);
 
     protected:
         // Resources

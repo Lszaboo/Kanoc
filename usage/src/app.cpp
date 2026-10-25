@@ -722,19 +722,18 @@ void GuiVk::fillIds(VkModule& vkmod, StagingBuffer& idbuf){
 
 
 
-void App::Init(Harness<App>::Modules& m, const std::string& workingPath){
+void App::Init(Harness<App>::Modules& m){
     uint32_t deviceID = 0;
 
     resources.Init(&m.vkmod.vk);
     resources.name = "App";
 
-    indexVk.Init(m.vkmod, resources, workingPath);
-    duckVk.Init(m.vkmod,  indexVk, resources, workingPath);
+    indexVk.Init(m.vkmod, resources, m.workingPath);
+    duckVk.Init(m.vkmod,  indexVk, resources, m.workingPath);
 }
 
-void App::cursorPosChanged(GLFWwindow *window, double xpos, double ypos){
-     auto app = static_cast<App*>(glfwGetWindowUserPointer(window));
-     app->mousePos = glm::vec2(xpos, ypos);
+void App::cursorPosChanged(double xpos, double ypos){
+     mousePos = glm::vec2(xpos, ypos);
 }
 
 void App::Destroy(Harness<App>::Modules& m){
