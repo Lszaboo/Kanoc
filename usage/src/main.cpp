@@ -3,16 +3,11 @@
 
 int main(int argc, char **argv)
 {
-    uint32_t deviceID = 0;
-    if (argc>1) {
-        deviceID = std::stoi(argv[1]);
-    }
+    Harness<App> harnessedApp;
 
-    auto harnessedapp = Harness<App>();
-
-    harnessedapp.Init(argv[0]);
-    harnessedapp.Play();
-    harnessedapp.Destroy();
+    harnessedApp.Init(argv[0]);
+    harnessedApp.Play();
+    harnessedApp.Destroy();
 
     return 0;
 }

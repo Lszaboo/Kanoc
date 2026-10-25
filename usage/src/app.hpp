@@ -56,7 +56,7 @@ class IndexVK{
         Named<Descriptors*> combinerDescriptors;
         Named<GraphicsPipeline*> combinerPipeline;
 
-        void Init(VkModule& vkmod, ResourceOwners& resources, const std::string& workingPath);
+        void Init(Modules* m, ResourceOwners& resources);
         void Resize(VkModule& vkmod);
 
         uint32_t readId(glm::ivec2 windowSize, glm::ivec2 mouseCoord, uint32_t frameIndex);
@@ -92,7 +92,7 @@ class DuckVk{
         // uniforms per frames-in-flight, because the CPU will upload while a frame is processed.
         std::array<Named<ShaderBuffer*>, VkModule::maxFramesInFlight> uniforms;
 
-        void Init(VkModule& vkmod, IndexVK& indexVk, ResourceOwners& resources, const std::string& workingPath);
+        void Init(Modules* m, IndexVK& indexVk, ResourceOwners& resources);
         void BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, SamplerTexture& coltex, DepthTexture& coldepth, SamplerTexture& idtex);
         void RecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, uint32_t& frameIndex);
         void EndRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, SamplerTexture& coltex, SamplerTexture& idtex);
@@ -118,13 +118,16 @@ class GuiVk{
 class App{
     public:
         // functions
-        void Init(Harness<App>::Modules& m);
-        void Destroy(Harness<App>::Modules& m);
-        void Play(Harness<App>::Modules& m);
+        void Init(Modules* modules);
+        void Destroy();
+        void Play();
 
         void cursorPosChanged(double xpos, double ypos);
 
     protected:
+        // Kanoc harness
+        Modules* m;
+
         // Resources
         ResourceOwners resources;
 
@@ -141,14 +144,14 @@ class App{
         CommandRecorders cmds;
 
         // functions
-        void printApiData(Harness<App>::Modules& m);
+        void printApiData();
 
-        void updateDeltaTime(Harness<App>::Modules& m);
-        void updateShaderData(Harness<App>::Modules& m);
+        void updateDeltaTime();
+        void updateShaderData();
         void updateFrameIndex();
         uint32_t previousFrameIdx();
-        void pollEvents(Harness<App>::Modules& m);
-        void updateAppLogic(Harness<App>::Modules& m);
+        void pollEvents();
+        void updateAppLogic();
 
         double time = 0.0;
         double oldTime = 0.0;

@@ -7,6 +7,30 @@
 #include <filesystem>
 #include <string>
 
+class Modules{
+    public:
+        GLFWModule glfwmod;
+        VkModule vkmod;
+        ImGuiModule guimod;
+        std::string workingPath;
+
+        template<typename AppT>
+        void Init(AppT* app, const std::string& argvzero){
+            auto dir = std::filesystem::absolute(argvzero).parent_path();
+            workingPath = dir.string();
+
+            glfwmod.Init(app);
+            vkmod.Init(glfwmod);
+            guimod.Init(glfwmod, vkmod, workingPath);
+        }
+
+        void Destroy(){
+            guimod.Destroy(vkmod);
+            vkmod.Destroy();
+            glfwmod.Destroy();
+        }
+};
+
 /*
  * Harness for Apps.
  * The flow is:
@@ -15,42 +39,28 @@
 template<typename AppT>
 class Harness{
     public:
-        struct Modules{
-            GLFWModule glfwmod;
-            VkModule vkmod;
-            ImGuiModule guimod;
-            std::string workingPath;
-        };
+        AppT* app = nullptr;
+        Modules* modules = nullptr;
 
         void Init(const std::string& argvzero){
             app = new AppT();
-            auto dir = std::filesystem::absolute(argvzero).parent_path();
-            m.workingPath = dir.string();
+            modules = new Modules();
 
-            m.glfwmod.Init(app);
-            m.vkmod.Init(m.glfwmod);
-            m.guimod.Init(m.glfwmod, m.vkmod, m.workingPath);
-
-            app->Init(m);
-        }
-
-        void Destroy(){
-            m.vkmod.WaitForIdle();
-
-            app->Destroy(m);
-            delete app;
-
-            m.guimod.Destroy(m.vkmod);
-            m.vkmod.Destroy();
-            m.glfwmod.Destroy();
+            modules->Init(app, argvzero);
+            app->Init(modules);
         }
 
         void Play(){
-            app->Play(m);
+            app->Play();
         }
 
-    protected:
-        Harness::Modules m;
-        AppT* app = nullptr;
+        void Destroy(){
+            modules->vkmod.WaitForIdle();
 
+            app->Destroy();
+            delete app;
+
+            modules->Destroy();
+            delete modules;
+        }
 };

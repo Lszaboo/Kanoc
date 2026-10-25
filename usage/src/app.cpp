@@ -32,7 +32,8 @@
 #include <string>
 #include <iostream>
 
-void IndexVK::Init(VkModule& vkmod, ResourceOwners& resources, const std::string& workingPath){
+void IndexVK::Init(Modules* m, ResourceOwners& resources){
+    VkModule& vkmod = m->vkmod;
     auto depth_texture = DepthTexture();
     depth_texture.Init(vkmod.vk, vkmod.windowSize);
     depth = resources.depthtextures.Add("Index_Depth_Texture", std::move(depth_texture));
@@ -70,7 +71,7 @@ void IndexVK::Init(VkModule& vkmod, ResourceOwners& resources, const std::string
     }
 
     VkShaderModule combiner_shader = {VK_NULL_HANDLE};
-    vkmod.slang.LoadAndCompile(vkmod.vk, workingPath + "/shaders/combiner.slang", combiner_shader);
+    vkmod.slang.LoadAndCompile(vkmod.vk, m->workingPath + "/shaders/combiner.slang", combiner_shader);
     combinerShader = resources.shaders.Add("Index_Combiner_Shader", std::move(combiner_shader));
 
     InitDescriptors(vkmod, resources);
@@ -387,11 +388,13 @@ void IndexVK::EndRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, 
 
 
 
-void DuckVk::Init(VkModule& vkmod, IndexVK& indexVk, ResourceOwners &resources, const std::string& workingPath){
-    model = resources.models.Add("Duck_obj", ObjModel::Build(vkmod.vk, workingPath + "/assets/duck.obj"));
+void DuckVk::Init(Modules* m, IndexVK& indexVk, ResourceOwners &resources){
+    VkModule& vkmod = m->vkmod;
+
+    model = resources.models.Add("Duck_obj", ObjModel::Build(vkmod.vk, m->workingPath + "/assets/duck.obj"));
 
     auto duck_texture = SamplerTexture();
-    duck_texture.InitFromFile(vkmod.vk, vkmod.commandPool, vkmod.queue, workingPath + "/assets/duck.ktx");
+    duck_texture.InitFromFile(vkmod.vk, vkmod.commandPool, vkmod.queue, m->workingPath + "/assets/duck.ktx");
     textures[0] = resources.samplertextures.Add("Duck_Texture", std::move(duck_texture));
 
     for (auto i = 0; i < VkModule::maxFramesInFlight; i++) {
@@ -402,7 +405,7 @@ void DuckVk::Init(VkModule& vkmod, IndexVK& indexVk, ResourceOwners &resources, 
     InitDescriptors(vkmod, resources);
 
     VkShaderModule duck_shader = {VK_NULL_HANDLE};
-    vkmod.slang.LoadAndCompile(vkmod.vk, std::string(workingPath + "/shaders/ducks.slang"), duck_shader);
+    vkmod.slang.LoadAndCompile(vkmod.vk, std::string(m->workingPath + "/shaders/ducks.slang"), duck_shader);
     shader = resources.shaders.Add("Duck_Shader", std::move(duck_shader));
 
     InitPipeline(vkmod, indexVk, resources);
@@ -722,25 +725,26 @@ void GuiVk::fillIds(VkModule& vkmod, StagingBuffer& idbuf){
 
 
 
-void App::Init(Harness<App>::Modules& m){
+void App::Init(Modules* modules){
+    m = modules;
     uint32_t deviceID = 0;
 
-    resources.Init(&m.vkmod.vk);
+    resources.Init(&m->vkmod.vk);
     resources.name = "App";
 
-    indexVk.Init(m.vkmod, resources, m.workingPath);
-    duckVk.Init(m.vkmod,  indexVk, resources, m.workingPath);
+    indexVk.Init(m, resources);
+    duckVk.Init(m,  indexVk, resources);
+}
+
+void App::Destroy(){
+    // App default destructor auto destroys everything currently.
 }
 
 void App::cursorPosChanged(double xpos, double ypos){
      mousePos = glm::vec2(xpos, ypos);
 }
 
-void App::Destroy(Harness<App>::Modules& m){
-    // App default destructor auto destroys everything currently.
-}
-
-void App::printApiData(Harness<App>::Modules& m){
+void App::printApiData(){
     uint32_t extensionCount = 0;
     vkEnumerateInstanceExtensionProperties( nullptr, &extensionCount, nullptr );
     std::cout << extensionCount << " extensions supported\n";
@@ -756,14 +760,14 @@ void App::printApiData(Harness<App>::Modules& m){
     std::cout << ImGui::GetVersion() << std::endl;
 }
 
-void App::updateDeltaTime(Harness<App>::Modules& m){
+void App::updateDeltaTime(){
     oldTime = time;
     time = glfwGetTime();
     deltaTime = time - oldTime;
 }
 
-void App::updateShaderData(Harness<App>::Modules& m){
-    shaderData.projection = glm::perspective(glm::radians(45.0f), (float)m.vkmod.windowSize.x / (float)m.vkmod.windowSize.y, 0.1f, 32.0f);
+void App::updateShaderData(){
+    shaderData.projection = glm::perspective(glm::radians(45.0f), (float)m->vkmod.windowSize.x / (float)m->vkmod.windowSize.y, 0.1f, 32.0f);
     shaderData.view = glm::lookAt(camPos, glm::vec3(0.0), glm::vec3(0.0,1.0,0.0));
     for (auto i = 0; i < 3; i++) {
         auto instancePos = glm::vec3((float)(i - 1) * 5.0f, 0.0f, 0.0f);
@@ -782,57 +786,57 @@ uint32_t App::previousFrameIdx(){
     return (frameIndex-1)==-1 ? (VkModule::maxFramesInFlight-1) : (frameIndex-1);
 }
 
-void App::pollEvents(Harness<App>::Modules& m){
+void App::pollEvents(){
     glfwPollEvents();
 }
 
-void App::updateAppLogic(Harness<App>::Modules &m){
+void App::updateAppLogic(){
     float y = -5.0;
     camPos = glm::vec3(cos(time),0.0,sin(time)) * 15.0f + glm::vec3(0.0,y,0.0);
 }
 
-void App::Play(Harness<App>::Modules& m){
-    printApiData(m);
-    m.glfwmod.printWindowDimensions();
+void App::Play(){
+    printApiData();
+    m->glfwmod.printWindowDimensions();
 
-    while (!glfwWindowShouldClose(m.glfwmod.window)){
+    while (!glfwWindowShouldClose(m->glfwmod.window)){
         updateFrameIndex();
-        m.vkmod.updateFence(frameIndex); // Wait for this frame fence and reset it
-        m.vkmod.updateImage(frameIndex,imageIndex,updateSwapchain); // Acquire next ssc image.
+        m->vkmod.updateFence(frameIndex); // Wait for this frame fence and reset it
+        m->vkmod.updateImage(frameIndex,imageIndex,updateSwapchain); // Acquire next ssc image.
         while (updateSwapchain) {
-            chk(vkDeviceWaitIdle(m.vkmod.vk.ldevice.handle));
-            m.vkmod.recreateSwapchains(m.glfwmod);
-            m.guimod.recreateImGui(m.vkmod);
-            indexVk.Resize(m.vkmod);
-            m.vkmod.updateImage(frameIndex,imageIndex,updateSwapchain);
+            chk(vkDeviceWaitIdle(m->vkmod.vk.ldevice.handle));
+            m->vkmod.recreateSwapchains(m->glfwmod);
+            m->guimod.recreateImGui(m->vkmod);
+            indexVk.Resize(m->vkmod);
+            m->vkmod.updateImage(frameIndex,imageIndex,updateSwapchain);
         }
 
-        updateDeltaTime(m);
+        updateDeltaTime();
 
-        pollEvents(m);
+        pollEvents();
 
-        m.guimod.beginFrame();
-        guiVk.update(m.guimod, m.vkmod, m.vkmod.fences[previousFrameIdx()], indexVk, frameIndex, previousFrameIdx(), mousePos, shaderData.id);
-        m.guimod.endFrame();
+        m->guimod.beginFrame();
+        guiVk.update(m->guimod, m->vkmod, m->vkmod.fences[previousFrameIdx()], indexVk, frameIndex, previousFrameIdx(), mousePos, shaderData.id);
+        m->guimod.endFrame();
 
-        updateAppLogic(m);
+        updateAppLogic();
 
-        updateShaderData(m);
+        updateShaderData();
 
-        cmds.cb = m.vkmod.commandBuffers[frameIndex];
-        m.vkmod.BeginCBRecordingToSSC(frameIndex);
+        cmds.cb = m->vkmod.commandBuffers[frameIndex];
+        m->vkmod.BeginCBRecordingToSSC(frameIndex);
 
-        duckVk.BeginRecordCommands(cmds, m.vkmod.windowSize, *indexVk.coltex.resource, *indexVk.depth.resource, *indexVk.idtex.resource);
-        duckVk.RecordCommands(cmds, m.vkmod.windowSize, frameIndex);
-        duckVk.EndRecordCommands(cmds, m.vkmod.windowSize, *indexVk.coltex.resource, *indexVk.idtex.resource);
+        duckVk.BeginRecordCommands(cmds, m->vkmod.windowSize, *indexVk.coltex.resource, *indexVk.depth.resource, *indexVk.idtex.resource);
+        duckVk.RecordCommands(cmds, m->vkmod.windowSize, frameIndex);
+        duckVk.EndRecordCommands(cmds, m->vkmod.windowSize, *indexVk.coltex.resource, *indexVk.idtex.resource);
 
-        indexVk.BeginRecordCommands(cmds, m.vkmod.windowSize, imageIndex, m.vkmod.ssc, m.vkmod.sscdepth, frameIndex);
-        indexVk.RecordCommands(cmds, m.vkmod.windowSize, imageIndex, m.vkmod.ssc, m.vkmod.sscdepth);
-        m.guimod.RecordRenderCommands(frameIndex, m.vkmod);
-        indexVk.EndRecordCommands(cmds, m.vkmod.windowSize, imageIndex, m.vkmod.ssc, m.vkmod.sscdepth);
+        indexVk.BeginRecordCommands(cmds, m->vkmod.windowSize, imageIndex, m->vkmod.ssc, m->vkmod.sscdepth, frameIndex);
+        indexVk.RecordCommands(cmds, m->vkmod.windowSize, imageIndex, m->vkmod.ssc, m->vkmod.sscdepth);
+        m->guimod.RecordRenderCommands(frameIndex, m->vkmod);
+        indexVk.EndRecordCommands(cmds, m->vkmod.windowSize, imageIndex, m->vkmod.ssc, m->vkmod.sscdepth);
 
-        m.vkmod.EndCBRecordingToSSC(frameIndex);
-        m.vkmod.updateSubmitCommandBuffer(frameIndex,imageIndex);
-        m.vkmod.updatePresentImage(imageIndex,updateSwapchain);
+        m->vkmod.EndCBRecordingToSSC(frameIndex);
+        m->vkmod.updateSubmitCommandBuffer(frameIndex,imageIndex);
+        m->vkmod.updatePresentImage(imageIndex,updateSwapchain);
     }
 }
