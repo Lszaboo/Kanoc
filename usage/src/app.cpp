@@ -668,7 +668,9 @@ void GuiVk::update(ImGuiModule& guimod, VkModule& vkmod, VkFence& fence, IndexVK
         ImGui::Checkbox("Read under mouse.", &readUnderMouse);
         if (readUnderMouse) {
             chk(vkWaitForFences(vkmod.vk.ldevice.handle, 1, &fence, true, UINT64_MAX));
-            id = indexVk.readId(vkmod.windowSize, mousePos, frameIndex);
+            // FIXME: use window scale instead of  1.0f!
+            float  scale  = 1.0;
+            id = indexVk.readId(vkmod.windowSize, mousePos*scale, frameIndex);
             ImGui::SameLine();
             ImGui::Text("Mouse id is: %d", id);
         }

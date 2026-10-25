@@ -2,7 +2,7 @@
 
 #include <cstring>
 #include <glm/ext/vector_int2.hpp>
-#include <slang.h>
+#include <slang/slang.h>
 #include <string>
 #include <vector>
 #include <ktx.h>
