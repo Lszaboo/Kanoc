@@ -78,13 +78,13 @@ class VkModule{
         void printDevices(std::vector<VkPhysicalDevice> &pdevices, uint32_t &pdeviceCount);
 
         void updateFence(uint32_t &frameIndex);
-        void updateImage(uint32_t &frameIndex, uint32_t &imageIndex, bool &updateSwapchain);
+        bool nextSSCImage(uint32_t &frameIndex, uint32_t &imageIndex);
 
         void BeginCBRecordingToSSC(uint32_t& frameIndex);
         void EndCBRecordingToSSC(uint32_t& frameIndex);
 
         void updateSubmitCommandBuffer(uint32_t &frameIndex, uint32_t &imageIndex);
-        void updatePresentImage(uint32_t &imageIndex, bool &updateSwapchain);
+        bool queuePresentImage(uint32_t &imageIndex);
 
         void recreateSwapchains(GLFWModule &glfw);
     protected:

@@ -291,7 +291,13 @@ void VkModule::updateFence(uint32_t &frameIndex){
     chk(vkResetFences(vk.ldevice.handle, 1, &fences[frameIndex]));
 }
 
-void VkModule::updateImage(uint32_t &frameIndex, uint32_t &imageIndex, bool &updateSwapchain){
+/*
+ *  The function gets the index of the next ssc image, and assigns the
+ *  current's frames semaphore to wait on the next ssc image acquisition.
+ *  - The imagindex parameter will index the next ssc image.
+ *  - The return of the function is true if the swapchain needs recreation.
+ */
+bool VkModule::nextSSCImage(uint32_t &frameIndex, uint32_t &imageIndex){
     // give index of next swapchain image
     // also signals semaphore when image is ready
     /*
@@ -313,10 +319,16 @@ void VkModule::updateImage(uint32_t &frameIndex, uint32_t &imageIndex, bool &upd
      * The reuse of presentation resources should rely on vkAcquireNextImageKHR
      * or additional vk.extensions (will be mentioned at the end of this article), rather than on vkQueueSubmit fences.
      */
-    chkSwapchain(
-        vkAcquireNextImageKHR(vk.ldevice.handle, ssc.swapchain, UINT64_MAX, imageAcquiredSemaphores[frameIndex], VK_NULL_HANDLE, &imageIndex),
-        updateSwapchain
-    );
+    VkResult result = vkAcquireNextImageKHR(vk.ldevice.handle, ssc.swapchain, UINT64_MAX, imageAcquiredSemaphores[frameIndex], VK_NULL_HANDLE, &imageIndex);
+
+    if (result < VK_SUCCESS) {
+		if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+			return true;
+		}
+		std::cerr << "Vulkan ssc call returned an error (" << result << ")\n";
+		exit(result);
+	}
+    return false;
 }
 
 void VkModule::BeginCBRecordingToSSC(uint32_t& frameIndex){
@@ -374,25 +386,29 @@ void VkModule::updateSubmitCommandBuffer(uint32_t& frameIndex, uint32_t& imageIn
     chk(vkQueueSubmit2(queue.handle, 1, &submitInfo, fences[frameIndex]));
 }
 
-void VkModule::updatePresentImage(uint32_t& imageIndex, bool& updateSwapchain){
+bool VkModule::queuePresentImage(uint32_t& imageIndex){
     VkPresentInfoKHR presentInfo{
         .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
         .waitSemaphoreCount = 1,
-        .pWaitSemaphores = &renderCompleteSemaphores[imageIndex], // wait for image to be completed semaphore
+        .pWaitSemaphores = &renderCompleteSemaphores[imageIndex], // Wait for semaphore, indicating rendering to image is complete.
         .swapchainCount = 1,
         .pSwapchains = &ssc.swapchain,
         .pImageIndices = &imageIndex
     };
-    chkSwapchain(
-        vkQueuePresentKHR(queue.handle, &presentInfo),
-        updateSwapchain
-    );
+
+    VkResult result = vkQueuePresentKHR(queue.handle, &presentInfo);
+    if (result < VK_SUCCESS) {
+		if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+			return true;
+		}
+		std::cerr << "Vulkan call returned an error (" << result << ")\n";
+		exit(result);
+	}else{
+	    return false;
+	}
 }
 
 void VkModule::recreateSwapchains(GLFWModule &glfw){
-    //glfw.printWindowDimensions();
-    glfwGetFramebufferSize(glfw.window, &windowSize.x, &windowSize.y);
-
     // swapchain
     VkSurfaceCapabilitiesKHR surfaceCaps = {};
     chk(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(init.pdevices[init.pdeviceID], ssc.surface, &surfaceCaps));
@@ -423,7 +439,15 @@ void VkModule::recreateSwapchains(GLFWModule &glfw){
         };
         chk(vkCreateImageView(vk.ldevice.handle, &viewCI, nullptr, &ssc.views[i]));
     }
+    // ssc available semaphores.
+    for (auto& semaphore : imageAcquiredSemaphores) {
+        vkDestroySemaphore(vk.ldevice.handle, semaphore, nullptr);
+    }
+    for (auto& semaphore : imageAcquiredSemaphores) {
+        chk(vkCreateSemaphore(vk.ldevice.handle, &init.semaphoreCI, nullptr, &semaphore));
+    }
 
+    // ssc complete semaphores.
     for (auto& semaphore : renderCompleteSemaphores) {
         vkDestroySemaphore(vk.ldevice.handle, semaphore, nullptr);
     }
@@ -431,6 +455,7 @@ void VkModule::recreateSwapchains(GLFWModule &glfw){
     for (auto& semaphore : renderCompleteSemaphores) {
         chk(vkCreateSemaphore(vk.ldevice.handle, &init.semaphoreCI, nullptr, &semaphore));
     }
+
     vkDestroySwapchainKHR(vk.ldevice.handle, ssc.swapchainci.oldSwapchain, nullptr);
 
     // depth

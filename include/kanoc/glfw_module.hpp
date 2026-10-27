@@ -3,9 +3,11 @@
 #include <GLFW/glfw3.h>
 #include <cassert>
 #include <cstdint>
+#include <glm/ext/vector_int2.hpp>
 #include <vector>
 #include <iostream>
 
+#include "kanoc/cmdhelpers.hpp"
 #include "kanoc/devices.hpp"
 
 class GLFWModule{
@@ -32,6 +34,23 @@ class GLFWModule{
             const char** strings = glfwGetRequiredInstanceExtensions(&extensions.count);
             for (uint32_t i=0; i<extensions.count; i++) {
                 extensions.items.push_back(strings[i]);
+            }
+        }
+
+        glm::ivec2 getWindowDimension(){
+            glm::ivec2 wsize;
+            glfwGetFramebufferSize(window, &wsize.x, &wsize.y);
+            return  wsize;
+        }
+
+        bool setWindowDimensionsDiffer(glm::ivec2& currWindowDimensions){
+            glm::ivec2 glfwDimensions = getWindowDimension();
+
+            if (currWindowDimensions != glfwDimensions) {
+                currWindowDimensions = glfwDimensions;
+                return true;
+            }else {
+                return false;
             }
         }
 

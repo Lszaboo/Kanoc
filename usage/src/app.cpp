@@ -804,13 +804,22 @@ void App::Play(){
     while (!glfwWindowShouldClose(m->glfwmod.window)){
         updateFrameIndex();
         m->vkmod.updateFence(frameIndex); // Wait for this frame fence and reset it
-        m->vkmod.updateImage(frameIndex,imageIndex,updateSwapchain); // Acquire next ssc image.
+        updateSwapchain |= m->glfwmod.setWindowDimensionsDiffer(m->vkmod.windowSize);
+        if (!updateSwapchain) { // Could be done with short-circuit or as well, but for safety expliciticy was chosen.
+            updateSwapchain |= m->vkmod.nextSSCImage(frameIndex,imageIndex); // Get next ssc image.
+        }
+
         while (updateSwapchain) {
             chk(vkDeviceWaitIdle(m->vkmod.vk.ldevice.handle));
+
             m->vkmod.recreateSwapchains(m->glfwmod);
             m->guimod.recreateImGui(m->vkmod);
             indexVk.Resize(m->vkmod);
-            m->vkmod.updateImage(frameIndex,imageIndex,updateSwapchain);
+
+            updateSwapchain = m->glfwmod.setWindowDimensionsDiffer(m->vkmod.windowSize);
+            if (!updateSwapchain) { // Could be done with short-circuit or as well, but for safety expliciticy was chosen.
+                updateSwapchain |= m->vkmod.nextSSCImage(frameIndex,imageIndex);
+            }
         }
 
         updateDeltaTime();
@@ -839,6 +848,6 @@ void App::Play(){
 
         m->vkmod.EndCBRecordingToSSC(frameIndex);
         m->vkmod.updateSubmitCommandBuffer(frameIndex,imageIndex);
-        m->vkmod.updatePresentImage(imageIndex,updateSwapchain);
+        updateSwapchain = m->vkmod.queuePresentImage(imageIndex); // Queues  Resets updateSwapchain.
     }
 }
