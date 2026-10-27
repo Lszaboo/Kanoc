@@ -111,7 +111,7 @@ class GuiVk{
         std::vector<uint32_t> ids;
         glm::ivec2 iddim;
 
-        void update(ImGuiModule& guimod, VkModule& vkmod, VkFence& fence, IndexVK& indexVk, const uint32_t& frameIndex, const uint32_t& prevIndex, glm::vec2& mousePos, uint32_t& id);
+        void update(Modules* m, VkFence& fence, IndexVK& indexVk, const uint32_t& frameIndex, const uint32_t& prevIndex, glm::vec2& mousePos, uint32_t& id);
         void fillIds(VkModule& vkmod, StagingBuffer& idbuf);
 };
 

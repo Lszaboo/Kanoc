@@ -16,6 +16,7 @@
 #include "kanoc/textures.hpp"
 #include <GLFW/glfw3.h>
 #include <cassert>
+#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -658,32 +659,41 @@ void DuckVk::EndRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, S
 
 
 
-void GuiVk::update(ImGuiModule& guimod, VkModule& vkmod, VkFence& fence, IndexVK& indexVk, const uint32_t& frameIndex, const uint32_t& prevIndex, glm::vec2& mousePos, uint32_t& id){
+void GuiVk::update(Modules* m, VkFence& fence, IndexVK& indexVk, const uint32_t& frameIndex, const uint32_t& prevIndex, glm::vec2& mousePos, uint32_t& id){
     if (ImGui::Begin("Demo", &shown)){
         ImGui::Text("A demo window.");
 
-        ImGui::Text("Resolution: %d x %d", vkmod.windowSize.x, vkmod.windowSize.y);
+        ImGui::Text("Resolution: %d x %d", m->vkmod.windowSize.x, m->vkmod.windowSize.y);
         ImGui::Text("MousePos: (%.2f;%.2f)", mousePos.x, mousePos.y);
 
         ImGui::Checkbox("Read under mouse.", &readUnderMouse);
         if (readUnderMouse) {
-            chk(vkWaitForFences(vkmod.vk.ldevice.handle, 1, &fence, true, UINT64_MAX));
-            // FIXME: use window scale instead of  1.0f!
-            float  scale  = 1.0;
-            id = indexVk.readId(vkmod.windowSize, mousePos*scale, frameIndex);
+            glm::vec2 scale;
+            glfwGetWindowContentScale(m->glfwmod.window, &scale.x, &scale.y);
+            glm::ivec2 readPos = glm::clamp(
+                glm::ivec2(mousePos)*glm::ivec2(scale),
+                glm::ivec2(0,0),
+                m->vkmod.windowSize
+            );
+
+            chk(vkWaitForFences(m->vkmod.vk.ldevice.handle, 1, &fence, true, UINT64_MAX));
+            id = indexVk.readId(m->vkmod.windowSize, readPos, frameIndex);
+
+            ImGui::SameLine();
+            ImGui::Text("ReadPos: (%2d;%d)", readPos.x, readPos.y);
             ImGui::SameLine();
             ImGui::Text("Mouse id is: %d", id);
         }
 
         ImGui::Checkbox("Plot indexes every frame.", &plotEveryFrame);
         if (plotEveryFrame) {
-            chk(vkWaitForFences(vkmod.vk.ldevice.handle, 1, &fence, true, UINT64_MAX));
-            fillIds(vkmod, *indexVk.idbufs[prevIndex].resource);
+            chk(vkWaitForFences(m->vkmod.vk.ldevice.handle, 1, &fence, true, UINT64_MAX));
+            fillIds(m->vkmod, *indexVk.idbufs[prevIndex].resource);
         }else{
             ImGui::SameLine();
             if (ImGui::Button("Wait for indexes...")) {
-                chk(vkWaitForFences(vkmod.vk.ldevice.handle, 1, &fence, true, UINT64_MAX));
-                fillIds(vkmod, *indexVk.idbufs[prevIndex].resource);
+                chk(vkWaitForFences(m->vkmod.vk.ldevice.handle, 1, &fence, true, UINT64_MAX));
+                fillIds(m->vkmod, *indexVk.idbufs[prevIndex].resource);
             }
         }
 
@@ -827,7 +837,7 @@ void App::Play(){
         pollEvents();
 
         m->guimod.beginFrame();
-        guiVk.update(m->guimod, m->vkmod, m->vkmod.fences[previousFrameIdx()], indexVk, frameIndex, previousFrameIdx(), mousePos, shaderData.id);
+        guiVk.update(m, m->vkmod.fences[previousFrameIdx()], indexVk, frameIndex, previousFrameIdx(), mousePos, shaderData.id);
         m->guimod.endFrame();
 
         updateAppLogic();
