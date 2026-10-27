@@ -59,14 +59,15 @@ class GLFWModule{
             }
         }
 
-        void getCorrectedCursorPos(glm::vec2 rawCursorPos){
+        glm::ivec2 getCorrectedCursorPos(glm::ivec2 windowDims, glm::vec2 rawCursorPos){
             glm::vec2 scale;
             glfwGetWindowContentScale(window, &scale.x, &scale.y);
-            //glm::ivec2 readPos = glm::clamp(
-            //    glm::ivec2(rawCursorPos)*glm::ivec2(scale),
-            //    glm::ivec2(0,0),
-            //    m->vkmod.windowSize
-            //);
+
+            return glm::clamp(
+                glm::ivec2(rawCursorPos)*glm::ivec2(scale),
+                glm::ivec2(0,0),
+                windowDims
+            );
         }
 
         void printWindowDimensions(){

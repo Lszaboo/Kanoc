@@ -673,13 +673,7 @@ void GuiVk::update(Modules* m, VkFence& fence, IndexVK& indexVk, const uint32_t&
 
         ImGui::Checkbox("Read under mouse.", &readUnderMouse);
         if (readUnderMouse) {
-            glm::vec2 scale;
-            glfwGetWindowContentScale(m->glfwmod.window, &scale.x, &scale.y);
-            glm::ivec2 readPos = glm::clamp(
-                glm::ivec2(mousePos)*glm::ivec2(scale),
-                glm::ivec2(0,0),
-                m->vkmod.windowSize
-            );
+            glm::ivec2 readPos = m->glfwmod.getCorrectedCursorPos(m->vkmod.windowSize, mousePos);
 
             indexVk.waitIdTexComplete(m);
             id = indexVk.readIdTex(m->vkmod.windowSize, readPos, frameIndex);
