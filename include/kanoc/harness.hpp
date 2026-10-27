@@ -4,14 +4,18 @@
 #include "kanoc/imgui_module.hpp"
 #include "kanoc/vk_module.hpp"
 #include <GLFW/glfw3.h>
+#include <cstdint>
 #include <filesystem>
 #include <string>
 
 class Modules{
     public:
+        // Modules
         GLFWModule glfwmod;
         VkModule vkmod;
         ImGuiModule guimod;
+
+        // App related general variables
         std::string workingPath;
 
         template<typename AppT>

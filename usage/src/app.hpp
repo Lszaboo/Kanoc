@@ -14,14 +14,15 @@
 #include "imgui.h"
 
 #include <vk_mem_alloc.h>
+
 #include <tiny_obj_loader.h>
+
 #include <ktx.h>
 #include <ktxvulkan.h>
 
-#include "kanoc/namedresource.hpp"
-
 #include <array>
 
+#include "kanoc/namedresource.hpp"
 #include "kanoc/harness.hpp"
 #include "kanoc/chk.hpp"
 #include "kanoc/resources.hpp"
@@ -59,7 +60,8 @@ class IndexVK{
         void Init(Modules* m, ResourceOwners& resources);
         void Resize(VkModule& vkmod);
 
-        uint32_t readId(glm::ivec2 windowSize, glm::ivec2 mouseCoord, uint32_t frameIndex);
+        void waitIdTexComplete(Modules* m);
+        uint32_t readIdTex(glm::ivec2 windowSize, glm::ivec2 mouseCoord, uint32_t frameIndex);
 
         void BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, uint32_t& nextsscimage, SurfaceSwapChain& ssc, DepthTexture& sscdepth, uint32_t& frameIndex);
         void RecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, uint32_t& nextsscimage, SurfaceSwapChain& ssc, DepthTexture& sscdepth);
@@ -148,15 +150,13 @@ class App{
 
         void updateDeltaTime();
         void updateShaderData();
-        void updateFrameIndex();
-        uint32_t previousFrameIdx();
         void pollEvents();
         void updateAppLogic();
 
         double time = 0.0;
         double oldTime = 0.0;
         double deltaTime = 0.0;
-        uint32_t frameIndex = 0;
+
         uint32_t imageIndex = 0;
         bool updateSwapchain = false;
         DuckVk::Uniforms shaderData = {};

@@ -1,6 +1,11 @@
 #pragma once
 
 #include <GLFW/glfw3.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
+
 #include <cassert>
 #include <cstdint>
 #include <glm/ext/vector_int2.hpp>
@@ -52,6 +57,16 @@ class GLFWModule{
             }else {
                 return false;
             }
+        }
+
+        void getCorrectedCursorPos(glm::vec2 rawCursorPos){
+            glm::vec2 scale;
+            glfwGetWindowContentScale(window, &scale.x, &scale.y);
+            //glm::ivec2 readPos = glm::clamp(
+            //    glm::ivec2(rawCursorPos)*glm::ivec2(scale),
+            //    glm::ivec2(0,0),
+            //    m->vkmod.windowSize
+            //);
         }
 
         void printWindowDimensions(){

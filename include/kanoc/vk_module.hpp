@@ -49,6 +49,10 @@ class VkModule{
         GraphicsQueue queue; // commands buffers are sent through this queue
 
         static const uint32_t maxFramesInFlight = 2;
+        static uint32_t nextFrameIdx(uint32_t fidx);
+        static uint32_t previousFrameIdx(uint32_t fidx);
+        uint32_t frameIdx = 0;
+        void updateFrameIdx();
 
         VkCommandPool commandPool = { VK_NULL_HANDLE }; // command buffers come from theese
         std::array<VkCommandBuffer, maxFramesInFlight> commandBuffers; // commands are recorded into this buffer
@@ -77,13 +81,13 @@ class VkModule{
 
         void printDevices(std::vector<VkPhysicalDevice> &pdevices, uint32_t &pdeviceCount);
 
-        void updateFence(uint32_t &frameIndex);
-        bool nextSSCImage(uint32_t &frameIndex, uint32_t &imageIndex);
+        void updateFence();
+        bool nextSSCImage(uint32_t &imageIndex);
 
-        void BeginCBRecordingToSSC(uint32_t& frameIndex);
-        void EndCBRecordingToSSC(uint32_t& frameIndex);
+        void BeginCBRecordingToSSC();
+        void EndCBRecordingToSSC();
 
-        void updateSubmitCommandBuffer(uint32_t &frameIndex, uint32_t &imageIndex);
+        void updateSubmitCommandBuffer(uint32_t &imageIndex);
         bool queuePresentImage(uint32_t &imageIndex);
 
         void recreateSwapchains(GLFWModule &glfw);

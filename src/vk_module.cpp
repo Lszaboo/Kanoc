@@ -284,11 +284,23 @@ void VkModule::initCommandBuffer(InitStack &init){
     chk(vkAllocateCommandBuffers(vk.ldevice.handle, &cbAllocCI, commandBuffers.data()));
 }
 
-void VkModule::updateFence(uint32_t &frameIndex){
+uint32_t VkModule::nextFrameIdx(uint32_t fidx){
+    return (fidx + 1) % VkModule::maxFramesInFlight;
+}
+
+uint32_t VkModule::previousFrameIdx(uint32_t fidx){
+    return (fidx-1)==-1 ? (VkModule::maxFramesInFlight-1) : (fidx-1);
+}
+
+void VkModule::updateFrameIdx(){
+    frameIdx = VkModule::nextFrameIdx(frameIdx);
+}
+
+void VkModule::updateFence(){
     // wait for a fence indicating rendering finished to become "signaled"
-    chk(vkWaitForFences(vk.ldevice.handle, 1, &fences[frameIndex], true, UINT64_MAX));
+    chk(vkWaitForFences(vk.ldevice.handle, 1, &fences[frameIdx], true, UINT64_MAX));
     // fence becomes "unsignaled"
-    chk(vkResetFences(vk.ldevice.handle, 1, &fences[frameIndex]));
+    chk(vkResetFences(vk.ldevice.handle, 1, &fences[frameIdx]));
 }
 
 /*
@@ -297,7 +309,7 @@ void VkModule::updateFence(uint32_t &frameIndex){
  *  - The imagindex parameter will index the next ssc image.
  *  - The return of the function is true if the swapchain needs recreation.
  */
-bool VkModule::nextSSCImage(uint32_t &frameIndex, uint32_t &imageIndex){
+bool VkModule::nextSSCImage(uint32_t &imageIndex){
     // give index of next swapchain image
     // also signals semaphore when image is ready
     /*
@@ -319,7 +331,7 @@ bool VkModule::nextSSCImage(uint32_t &frameIndex, uint32_t &imageIndex){
      * The reuse of presentation resources should rely on vkAcquireNextImageKHR
      * or additional vk.extensions (will be mentioned at the end of this article), rather than on vkQueueSubmit fences.
      */
-    VkResult result = vkAcquireNextImageKHR(vk.ldevice.handle, ssc.swapchain, UINT64_MAX, imageAcquiredSemaphores[frameIndex], VK_NULL_HANDLE, &imageIndex);
+    VkResult result = vkAcquireNextImageKHR(vk.ldevice.handle, ssc.swapchain, UINT64_MAX, imageAcquiredSemaphores[frameIdx], VK_NULL_HANDLE, &imageIndex);
 
     if (result < VK_SUCCESS) {
 		if (result == VK_ERROR_OUT_OF_DATE_KHR) {
@@ -331,8 +343,8 @@ bool VkModule::nextSSCImage(uint32_t &frameIndex, uint32_t &imageIndex){
     return false;
 }
 
-void VkModule::BeginCBRecordingToSSC(uint32_t& frameIndex){
-    auto cb = commandBuffers[frameIndex];
+void VkModule::BeginCBRecordingToSSC(){
+    auto cb = commandBuffers[frameIdx];
 
     // reset buffer
     chk(vkResetCommandBuffer(cb, 0));
@@ -345,19 +357,19 @@ void VkModule::BeginCBRecordingToSSC(uint32_t& frameIndex){
     chk(vkBeginCommandBuffer(cb, &cbBI));
 }
 
-void VkModule::EndCBRecordingToSSC(uint32_t& frameIndex){
-    vkEndCommandBuffer(commandBuffers[frameIndex]);
+void VkModule::EndCBRecordingToSSC(){
+    vkEndCommandBuffer(commandBuffers[frameIdx]);
 }
 
-void VkModule::updateSubmitCommandBuffer(uint32_t& frameIndex, uint32_t& imageIndex){
-    auto cb = commandBuffers[frameIndex];
+void VkModule::updateSubmitCommandBuffer(uint32_t& imageIndex){
+    auto cb = commandBuffers[frameIdx];
 
     // wait before color attachment for HKR image semaphore to be available
     // this is so it can be attached
     // vkAcquireNextImageKHR signals this
     VkSemaphoreSubmitInfo waitSemaphoreInfo{
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-        .semaphore = imageAcquiredSemaphores[frameIndex],
+        .semaphore = imageAcquiredSemaphores[frameIdx],
         .stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
     };
 
@@ -383,7 +395,7 @@ void VkModule::updateSubmitCommandBuffer(uint32_t& frameIndex, uint32_t& imageIn
         .signalSemaphoreInfoCount = 1,
         .pSignalSemaphoreInfos = &signalSemaphoreInfo,
     };
-    chk(vkQueueSubmit2(queue.handle, 1, &submitInfo, fences[frameIndex]));
+    chk(vkQueueSubmit2(queue.handle, 1, &submitInfo, fences[frameIdx]));
 }
 
 bool VkModule::queuePresentImage(uint32_t& imageIndex){
