@@ -113,7 +113,7 @@ class GuiVk{
         std::vector<uint32_t> ids;
         glm::ivec2 iddim;
 
-        void update(Modules* m, VkFence& fence, IndexVK& indexVk, const uint32_t& frameIndex, const uint32_t& prevIndex, glm::vec2& mousePos, uint32_t& id);
+        void update(Modules* m, IndexVK& indexVk, glm::vec2& rawCursorPos, glm::ivec2& correctedCursorPos, uint32_t& id);
         void fillIds(VkModule& vkmod, StagingBuffer& idbuf);
 };
 
@@ -124,7 +124,9 @@ class App{
         void Destroy();
         void Play();
 
-        void cursorPosChanged(double xpos, double ypos);
+        Modules* modules();
+        void cursorPosChanged(glm::vec2 rawCursorPos, glm::ivec2 correctedCursorPos);
+
 
     protected:
         // Kanoc harness
@@ -162,5 +164,7 @@ class App{
         DuckVk::Uniforms shaderData = {};
         glm::vec3 camPos = { 0.0f, 0.0f, -6.0f };
         glm::vec3 objectRotations[3] = {};
-        glm::vec2 mousePos = {};
+        glm::vec2 rawCursorPos = {};
+        glm::ivec2 correctedCursorPos = {};
+
 };

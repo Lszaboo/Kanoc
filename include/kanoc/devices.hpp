@@ -9,18 +9,29 @@ struct Extensions{
     std::vector<const char*> items;
 };
 
-struct LogicalDevice{
-    VkDevice handle = {VK_NULL_HANDLE};
-    VkPhysicalDevice physical = {VK_NULL_HANDLE};
+class LogicalDevice{
+    public:
+        VkDevice handle = {VK_NULL_HANDLE};
+        VkPhysicalDevice physical = {VK_NULL_HANDLE};
+
+        void Destroy();
 };
 
-struct VmaFields{
-    VmaAllocator allocator = {VK_NULL_HANDLE};
+class VmaFields{
+    public:
+        VmaAllocator allocator = {VK_NULL_HANDLE};
+
+        void Destroy();
 };
 
-struct FullDevice{
-    Extensions extensions;
-    VkInstance instance = {VK_NULL_HANDLE};
-    LogicalDevice ldevice;
-    VmaFields vma;
+void DestroyVKHandle(VkInstance instance);
+
+class FullDevice{
+    public:
+        Extensions extensions;
+        VkInstance instance = {VK_NULL_HANDLE};
+        LogicalDevice ldevice;
+        VmaFields vma;
+
+        void Destoy();
 };

@@ -97,18 +97,6 @@ class Owner{
 
         std::unordered_map<std::string, StoreT> storage;
         FullDevice* vk = nullptr;
-
-        void DestroyAllWithMSG(){
-            printDestroyMsg(name, indent, DestroyAll());
-        }
-
-        static void printDestroyMsg(const std::string& name, const bool& indent, const int amount){
-            if (indent) {
-                CMD_PRINT(CMD_TAB << CMD_BRACKETS(name, CMD_BLUE) << ": deleted " << CMD_COLORED(amount, CMD_RED) << " items!");
-            }else{
-                CMD_PRINT(CMD_BRACKETS(name, CMD_BLUE) << ": deleted " << CMD_COLORED(amount, CMD_RED) << " items!");
-            }
-        }
     public:
         bool log = true;
         std::string name = "NoName";
@@ -207,11 +195,10 @@ class Owner{
 
         ~Owner(){
             if (log) {
-                DestroyAllWithMSG();
+                CMD_printDestroyMsg(name, indent, CMD_BLUE, DestroyAll());
             }else{
                 DestroyAll();
             }
-
         }
 };
 
@@ -230,6 +217,7 @@ using HandleOwner = Owner<HandleStorageScheme<T>>;
 class ResourceOwners{
     public:
         std::string name = "NoName";
+        std::string nameCol = CMD_BOLDYELLOW;
 
         WrapperOwner<ObjModel> models;
         WrapperOwner<SamplerTexture> samplertextures;
@@ -287,6 +275,6 @@ class ResourceOwners{
         }
 
         ~ResourceOwners(){
-            CMD_PRINT(CMD_BRACKETS(name, CMD_YELLOW) << ": Destroying all Owners...");
+            CMD_PRINT(CMD_BRACKETS(name, nameCol) << ": Destroying all Owners...");
         }
 };

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <iostream>
+
 #define CMD_RESET   "\033[0m"
 #define CMD_BLACK   "\033[30m"      /* Black */
 #define CMD_RED     "\033[31m"      /* Red */
@@ -25,3 +28,13 @@
 #define CMD_PRINT(CMD_params)               std::cout << CMD_params << CMD_ENDL
 #define CMD_COLORED(CMD_params, CMD_col)    CMD_col << CMD_params << CMD_RESET
 #define CMD_BRACKETS(CMD_params, CMD_col)   "[" << CMD_COLORED(CMD_params, CMD_col) << "]"
+
+static void CMD_printDestroyMsg(const std::string &name, bool indent, const std::string& color, const int &amount){
+    std::string prefix = (indent ? CMD_TAB : "");
+
+    if (amount>0) {
+        CMD_PRINT(prefix << CMD_BRACKETS(name, color) << ": deleted " << CMD_COLORED(amount, CMD_RED) << " items!");
+    }else{
+        CMD_PRINT(prefix << CMD_BRACKETS(name, color) << ": deleted!");
+    }
+}

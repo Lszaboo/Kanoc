@@ -19,6 +19,7 @@
 #include <array>
 
 #include "kanoc/devices.hpp"
+#include "kanoc/surfaceswapchain.hpp"
 #include "kanoc/dynamicrendering.hpp"
 #include "kanoc/imagebarriers.hpp"
 #include "kanoc/textures.hpp"
@@ -41,24 +42,25 @@ class VkModule{
         // fields
         FullDevice vk;
         InitStack init;
-        glm::ivec2 windowSize;
+        glm::ivec2 windowDims;
 
         SurfaceSwapChain ssc; // Swapchain of the window.
         DepthTexture sscdepth; // Depth for ssc rendering.
 
-        GraphicsQueue queue; // commands buffers are sent through this queue
+        VkCommandPool commandPool = { VK_NULL_HANDLE }; // command buffers come from this.
+        GraphicsQueue queue; // Commands buffers are sent through this queue.
 
         static const uint32_t maxFramesInFlight = 2;
         static uint32_t nextFrameIdx(uint32_t fidx);
         static uint32_t previousFrameIdx(uint32_t fidx);
+
         uint32_t frameIdx = 0;
         void updateFrameIdx();
+        std::array<VkCommandBuffer, maxFramesInFlight> frameCommandBuffers; // Commands are recorded into this buffer.
+        std::array<VkFence, maxFramesInFlight> frameFinishedFences; // Is rendering finished for this frame-in-flight?
 
-        VkCommandPool commandPool = { VK_NULL_HANDLE }; // command buffers come from theese
-        std::array<VkCommandBuffer, maxFramesInFlight> commandBuffers; // commands are recorded into this buffer
-        std::array<VkFence, maxFramesInFlight> fences; // is rendering finished for this frame-in-flight?
-        std::array<VkSemaphore, maxFramesInFlight> imageAcquiredSemaphores; // signal this, when for this frame KHR image is available
-        std::vector<VkSemaphore> renderCompleteSemaphores; // signal this, when this KHR image is complete (size() == KHR image amount)
+        std::array<VkSemaphore, maxFramesInFlight> sscImageAcquiredSemaphores; // signal this, when for this frame KHR image is available
+        std::vector<VkSemaphore> sscImageRenderCompleteSemaphores; // signal this, when this KHR image is complete (size() == KHR image amount)
 
         SlangCompiler slang;
 
@@ -91,6 +93,4 @@ class VkModule{
         bool queuePresentImage(uint32_t &imageIndex);
 
         void recreateSwapchains(GLFWModule &glfw);
-    protected:
-        void printDestroyMsg(const std::string& name);
 };

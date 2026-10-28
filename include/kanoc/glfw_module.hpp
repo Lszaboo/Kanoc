@@ -20,14 +20,17 @@ class GLFWModule{
         GLFWwindow* window = nullptr;
 
         template<typename AppT>
-        void Init(AppT* app){
+        void Init(
+            AppT* app,
+            GLFWcursorposfun cursorfun
+        ){
             glfwInit();
             glfwWindowHint( GLFW_CLIENT_API, GLFW_NO_API );
             window = glfwCreateWindow( 1280, 720, "Vulkan window", nullptr, nullptr );
             assert(window);
 
             glfwSetWindowUserPointer(window, app);
-            glfwSetCursorPosCallback(window, GLFWModule::cursorPosCallback<AppT>);
+            glfwSetCursorPosCallback(window, cursorfun);
         }
 
         void Destroy(){
@@ -82,13 +85,5 @@ class GLFWModule{
             std::cout << "window: " << windowWidth << "x" << windowHeight << std::endl;
             std::cout << "framebuffer: " << framebufferWidth << "x" << framebufferHeight << std::endl;
             std::cout << "scale: " << scaleX << "x" << scaleY << std::endl;
-        }
-
-    protected:
-
-        template<typename AppT>
-        static void cursorPosCallback(GLFWwindow *window, double xpos, double ypos){
-            auto app = static_cast<AppT*>(glfwGetWindowUserPointer(window));
-            app->cursorPosChanged(xpos, ypos);
         }
 };

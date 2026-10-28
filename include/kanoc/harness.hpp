@@ -6,6 +6,8 @@
 #include <GLFW/glfw3.h>
 #include <cstdint>
 #include <filesystem>
+#include <glm/ext/vector_float2.hpp>
+#include <glm/ext/vector_int2.hpp>
 #include <string>
 
 class Modules{
@@ -23,7 +25,11 @@ class Modules{
             auto dir = std::filesystem::absolute(argvzero).parent_path();
             workingPath = dir.string();
 
-            glfwmod.Init(app);
+            glfwmod.Init(
+                app,
+                Modules::cursorPosCallback<AppT>
+            );
+
             vkmod.Init(glfwmod);
             guimod.Init(glfwmod, vkmod, workingPath);
         }
@@ -32,6 +38,18 @@ class Modules{
             guimod.Destroy(vkmod);
             vkmod.Destroy();
             glfwmod.Destroy();
+        }
+
+    protected:
+        template<typename AppT>
+        static void cursorPosCallback(GLFWwindow *window, double xpos, double ypos){
+            auto app = static_cast<AppT*>(glfwGetWindowUserPointer(window));
+            Modules* m = app->modules();
+
+            glm::vec2 rawCursorPos = glm::vec2(xpos, ypos);
+            glm::ivec2 correctedCursorPos = m->glfwmod.getCorrectedCursorPos(m->vkmod.windowDims, rawCursorPos);
+
+            app->cursorPosChanged(rawCursorPos, correctedCursorPos);
         }
 };
 

@@ -77,7 +77,7 @@ void ImGuiModule::endFrame(){
 void ImGuiModule::RecordRenderCommands(uint32_t &frameIndex, VkModule &vk){
     ImGui::Render();
     ImDrawData *data = ImGui::GetDrawData();
-    ImGui_ImplVulkan_RenderDrawData(data, vk.commandBuffers[frameIndex]);
+    ImGui_ImplVulkan_RenderDrawData(data, vk.frameCommandBuffers[frameIndex]);
 }
 
 void ImGuiModule::Destroy(VkModule &vk){
