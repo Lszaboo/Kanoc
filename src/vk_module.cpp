@@ -34,7 +34,7 @@ void VkModule::Init(GLFWModule &glfw){
     initSurface(init, glfw);
     initSwapchain(init, glfw);
 
-    sscdepth.Init(vk, windowDims);
+    ssc.depth.Init(vk, windowDims);
 
     initSynchronization(init);
     initCommandBuffer(init);
@@ -48,18 +48,8 @@ void VkModule::Destroy(){
 
 	for (auto i = 0; i < maxFramesInFlight; i++) {
 		vkDestroyFence(vk.ldevice.handle, frameFinishedFences[i], nullptr);
-		vkDestroySemaphore(vk.ldevice.handle, sscImageAcquiredSemaphores[i], nullptr);
 	}
 	CMD_printDestroyMsg("frameFinishedFences", true, CMD_MAGENTA, VkModule::maxFramesInFlight);
-	CMD_printDestroyMsg("sscImageAcquiredSemaphores", true, CMD_MAGENTA, VkModule::maxFramesInFlight);
-
-	for (auto i = 0; i < sscImageRenderCompleteSemaphores.size(); i++) {
-		vkDestroySemaphore(vk.ldevice.handle, sscImageRenderCompleteSemaphores[i], nullptr);
-	}
-	CMD_printDestroyMsg("sscImageRenderCompleteSemaphores", true, CMD_MAGENTA, static_cast<int>(sscImageRenderCompleteSemaphores.size()));
-
-	sscdepth.Destroy(vk);
-	CMD_printDestroyMsg("sscdepth", true, CMD_MAGENTA, 0);
 
 	ssc.Destroy(vk);
 	CMD_printDestroyMsg("ssc", true, CMD_MAGENTA, 0);
@@ -260,12 +250,13 @@ void VkModule::initSynchronization(InitStack &init){
         .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
         .flags = VK_FENCE_CREATE_SIGNALED_BIT
     };
+    ssc.imageAcquiredSemaphores.resize(maxFramesInFlight);
     for (auto i = 0; i < maxFramesInFlight; i++) {
         chk(vkCreateFence(vk.ldevice.handle, &fenceCI, nullptr, &frameFinishedFences[i]));
-        chk(vkCreateSemaphore(vk.ldevice.handle, &init.semaphoreCI, nullptr, &sscImageAcquiredSemaphores[i]));
+        chk(vkCreateSemaphore(vk.ldevice.handle, &init.semaphoreCI, nullptr, &ssc.imageAcquiredSemaphores[i]));
     }
-    sscImageRenderCompleteSemaphores.resize(ssc.images.size());
-    for (auto& semaphore : sscImageRenderCompleteSemaphores) {
+    ssc.imageRenderCompleteSemaphores.resize(ssc.images.size());
+    for (auto& semaphore : ssc.imageRenderCompleteSemaphores) {
         chk(vkCreateSemaphore(vk.ldevice.handle, &init.semaphoreCI, nullptr, &semaphore));
     }
 }
@@ -335,7 +326,7 @@ bool VkModule::nextSSCImage(uint32_t &imageIndex){
      * The reuse of presentation resources should rely on vkAcquireNextImageKHR
      * or additional vk.extensions (will be mentioned at the end of this article), rather than on vkQueueSubmit fences.
      */
-    VkResult result = vkAcquireNextImageKHR(vk.ldevice.handle, ssc.swapchain, UINT64_MAX, sscImageAcquiredSemaphores[frameIdx], VK_NULL_HANDLE, &imageIndex);
+    VkResult result = vkAcquireNextImageKHR(vk.ldevice.handle, ssc.swapchain, UINT64_MAX, ssc.imageAcquiredSemaphores[frameIdx], VK_NULL_HANDLE, &imageIndex);
 
     if (result < VK_SUCCESS) {
 		if (result == VK_ERROR_OUT_OF_DATE_KHR) {
@@ -373,7 +364,7 @@ void VkModule::updateSubmitCommandBuffer(uint32_t& imageIndex){
     // vkAcquireNextImageKHR signals this
     VkSemaphoreSubmitInfo waitSemaphoreInfo{
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-        .semaphore = sscImageAcquiredSemaphores[frameIdx],
+        .semaphore = ssc.imageAcquiredSemaphores[frameIdx],
         .stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
     };
 
@@ -386,7 +377,7 @@ void VkModule::updateSubmitCommandBuffer(uint32_t& imageIndex){
     // imageIndex is the current KHR image
     VkSemaphoreSubmitInfo signalSemaphoreInfo{
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-        .semaphore = sscImageRenderCompleteSemaphores[imageIndex],
+        .semaphore = ssc.imageRenderCompleteSemaphores[imageIndex],
         .stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
     };
 
@@ -406,7 +397,7 @@ bool VkModule::queuePresentImage(uint32_t& imageIndex){
     VkPresentInfoKHR presentInfo{
         .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
         .waitSemaphoreCount = 1,
-        .pWaitSemaphores = &sscImageRenderCompleteSemaphores[imageIndex], // Wait for semaphore, indicating rendering to image is complete.
+        .pWaitSemaphores = &ssc.imageRenderCompleteSemaphores[imageIndex], // Wait for semaphore, indicating rendering to image is complete.
         .swapchainCount = 1,
         .pSwapchains = &ssc.swapchain,
         .pImageIndices = &imageIndex
@@ -456,26 +447,26 @@ void VkModule::recreateSwapchains(GLFWModule &glfw){
         chk(vkCreateImageView(vk.ldevice.handle, &viewCI, nullptr, &ssc.views[i]));
     }
     // ssc available semaphores.
-    for (auto& semaphore : sscImageAcquiredSemaphores) {
+    for (auto& semaphore : ssc.imageAcquiredSemaphores) {
         vkDestroySemaphore(vk.ldevice.handle, semaphore, nullptr);
     }
-    for (auto& semaphore : sscImageAcquiredSemaphores) {
+    for (auto& semaphore : ssc.imageAcquiredSemaphores) {
         chk(vkCreateSemaphore(vk.ldevice.handle, &init.semaphoreCI, nullptr, &semaphore));
     }
 
     // ssc complete semaphores.
-    for (auto& semaphore : sscImageRenderCompleteSemaphores) {
+    for (auto& semaphore : ssc.imageRenderCompleteSemaphores) {
         vkDestroySemaphore(vk.ldevice.handle, semaphore, nullptr);
     }
-    sscImageRenderCompleteSemaphores.resize(ssc.count);
-    for (auto& semaphore : sscImageRenderCompleteSemaphores) {
+    ssc.imageRenderCompleteSemaphores.resize(ssc.count);
+    for (auto& semaphore : ssc.imageRenderCompleteSemaphores) {
         chk(vkCreateSemaphore(vk.ldevice.handle, &init.semaphoreCI, nullptr, &semaphore));
     }
 
     vkDestroySwapchainKHR(vk.ldevice.handle, ssc.swapchainci.oldSwapchain, nullptr);
 
     // depth
-    sscdepth.Resize(vk, windowDims);
+    ssc.depth.Resize(vk, windowDims);
 }
 
 void VkModule::WaitForIdle(){

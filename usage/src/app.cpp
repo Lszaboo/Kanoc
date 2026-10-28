@@ -190,7 +190,7 @@ void IndexVK::InitCombinerPipeline(VkModule& vkmod, ResourceOwners& resources){
         .depthWriteEnable = VK_TRUE,
         .depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL
     };
-    pb.defDepthFormat = vkmod.sscdepth.imageci.format;
+    pb.defDepthFormat = vkmod.ssc.depth.imageci.format;
 
     // unused but needed line width and multisampling setup
     pb.defRasterizationCI = GraphicsPipeline::basicRasterizationci();
@@ -326,7 +326,7 @@ void IndexVK::BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize
         .dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
         .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
         .newLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
-        .image = sscdepth.image, // set depth attachment
+        .image = ssc.depth.image, // set depth attachment
         .subresourceRange{.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, .levelCount = 1, .layerCount = 1 }
     });
     cmds.ibc.RecordAndClearCommands(cmds.cb);
@@ -340,7 +340,7 @@ void IndexVK::BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize
         .clearValue{.color{ 0.0f, 0.0f, 0.2f, 1.0f }}
     });
     cmds.drc.depth = {
-        .imageView = sscdepth.view,
+        .imageView = ssc.depth.view,
         .imageLayout = VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL,
         .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
         .storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
@@ -845,10 +845,10 @@ void App::Play(){
         duckVk.RecordCommands(cmds, m->vkmod.windowDims, m->vkmod.frameIdx);
         duckVk.EndRecordCommands(cmds, m->vkmod.windowDims, *indexVk.coltex.resource, *indexVk.idtex.resource);
 
-        indexVk.BeginRecordCommands(cmds, m->vkmod.windowDims, imageIndex, m->vkmod.ssc, m->vkmod.sscdepth, m->vkmod.frameIdx);
-        indexVk.RecordCommands(cmds, m->vkmod.windowDims, imageIndex, m->vkmod.ssc, m->vkmod.sscdepth);
+        indexVk.BeginRecordCommands(cmds, m->vkmod.windowDims, imageIndex, m->vkmod.ssc, m->vkmod.ssc.depth, m->vkmod.frameIdx);
+        indexVk.RecordCommands(cmds, m->vkmod.windowDims, imageIndex, m->vkmod.ssc, m->vkmod.ssc.depth);
         m->guimod.RecordRenderCommands(m->vkmod.frameIdx, m->vkmod);
-        indexVk.EndRecordCommands(cmds, m->vkmod.windowDims, imageIndex, m->vkmod.ssc, m->vkmod.sscdepth);
+        indexVk.EndRecordCommands(cmds, m->vkmod.windowDims, imageIndex, m->vkmod.ssc, m->vkmod.ssc.depth);
 
         m->vkmod.EndCBRecordingToSSC();
         m->vkmod.updateSubmitCommandBuffer(imageIndex);

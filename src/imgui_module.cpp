@@ -35,7 +35,7 @@ void ImGuiModule::Init(GLFWModule &glfw, VkModule &vk, const std::string& workin
         .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO_KHR,
         .colorAttachmentCount = 1,
         .pColorAttachmentFormats = &vk.ssc.swapchainci.imageFormat,
-        .depthAttachmentFormat = vk.sscdepth.imageci.format,
+        .depthAttachmentFormat = vk.ssc.depth.imageci.format,
     };
     ImGui_ImplVulkan_Init(&initInfo);
 

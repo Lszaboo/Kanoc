@@ -45,7 +45,6 @@ class VkModule{
         glm::ivec2 windowDims;
 
         SurfaceSwapChain ssc; // Swapchain of the window.
-        DepthTexture sscdepth; // Depth for ssc rendering.
 
         VkCommandPool commandPool = { VK_NULL_HANDLE }; // command buffers come from this.
         GraphicsQueue queue; // Commands buffers are sent through this queue.
@@ -58,9 +57,6 @@ class VkModule{
         void updateFrameIdx();
         std::array<VkCommandBuffer, maxFramesInFlight> frameCommandBuffers; // Commands are recorded into this buffer.
         std::array<VkFence, maxFramesInFlight> frameFinishedFences; // Is rendering finished for this frame-in-flight?
-
-        std::array<VkSemaphore, maxFramesInFlight> sscImageAcquiredSemaphores; // signal this, when for this frame KHR image is available
-        std::vector<VkSemaphore> sscImageRenderCompleteSemaphores; // signal this, when this KHR image is complete (size() == KHR image amount)
 
         SlangCompiler slang;
 
