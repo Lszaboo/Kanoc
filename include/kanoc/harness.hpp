@@ -49,7 +49,7 @@ class Modules{
             glm::vec2 rawCursorPos = glm::vec2(xpos, ypos);
             glm::ivec2 correctedCursorPos = m->glfwmod.getCorrectedCursorPos(m->vkmod.windowDims, rawCursorPos);
 
-            app->cursorPosChanged(rawCursorPos, correctedCursorPos);
+            app->cursorPosChanged(rawCursorPos, correctedCursorPos, m->guimod.io->WantCaptureMouse);
         }
 };
 

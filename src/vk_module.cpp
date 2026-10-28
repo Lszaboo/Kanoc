@@ -44,21 +44,20 @@ void VkModule::Init(GLFWModule &glfw){
 
 void VkModule::Destroy(){
     WaitForIdle();
-    CMD_PRINT(CMD_BRACKETS("VkModule", CMD_BOLDRED) << ": Destroying...");
 
 	for (auto i = 0; i < maxFramesInFlight; i++) {
 		vkDestroyFence(vk.ldevice.handle, frameFinishedFences[i], nullptr);
 	}
-	CMD_printDestroyMsg("frameFinishedFences", true, CMD_MAGENTA, VkModule::maxFramesInFlight);
+	CMD_printDestroyMsg("framefinishedfences", false, CMD_BOLDMAGENTA, VkModule::maxFramesInFlight);
 
 	ssc.Destroy(vk);
-	CMD_printDestroyMsg("ssc", true, CMD_MAGENTA, 0);
+	CMD_printDestroyMsg("ssc", false, CMD_BOLDMAGENTA, 0);
 
 	vkDestroyCommandPool(vk.ldevice.handle, commandPool, nullptr);
-	CMD_printDestroyMsg("commandpool", true, CMD_MAGENTA, 0);
+	CMD_printDestroyMsg("commandpool", false, CMD_BOLDMAGENTA, 0);
 
 	vk.Destoy();
-	CMD_printDestroyMsg("fulldevice", true, CMD_MAGENTA, 0);
+	CMD_printDestroyMsg("fulldevice", false, CMD_BOLDMAGENTA, 0);
 }
 
 void VkModule::initInstance(InitStack &init){

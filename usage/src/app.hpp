@@ -113,7 +113,7 @@ class GuiVk{
         std::vector<uint32_t> ids;
         glm::ivec2 iddim;
 
-        void update(Modules* m, IndexVK& indexVk, glm::vec2& rawCursorPos, glm::ivec2& correctedCursorPos, uint32_t& id);
+        void update(Modules* m, IndexVK& indexVk, glm::vec2& rawCursorPos, glm::ivec2& correctedCursorPos, bool guiCapturedCursor, uint32_t& id);
         void fillIds(VkModule& vkmod, StagingBuffer& idbuf);
 };
 
@@ -125,7 +125,7 @@ class App{
         void Play();
 
         Modules* modules();
-        void cursorPosChanged(glm::vec2 rawCursorPos, glm::ivec2 correctedCursorPos);
+        void cursorPosChanged(glm::vec2 rawCursorPos, glm::ivec2 correctedCursorPos, bool guiCapturedCursor);
 
 
     protected:
@@ -166,5 +166,6 @@ class App{
         glm::vec3 objectRotations[3] = {};
         glm::vec2 rawCursorPos = {};
         glm::ivec2 correctedCursorPos = {};
+        bool guiCapturedCursor = false;
 
 };

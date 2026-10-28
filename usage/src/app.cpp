@@ -665,7 +665,7 @@ void DuckVk::EndRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, S
 
 
 
-void GuiVk::update(Modules* m, IndexVK& indexVk, glm::vec2& rawCursorPos, glm::ivec2& correctedCursorPos, uint32_t& id){
+void GuiVk::update(Modules* m, IndexVK& indexVk, glm::vec2& rawCursorPos, glm::ivec2& correctedCursorPos, bool guiCapturedCursor,  uint32_t& id){
     if (ImGui::Begin("Demo", &shown)){
         ImGui::Text("A demo window.");
 
@@ -675,11 +675,17 @@ void GuiVk::update(Modules* m, IndexVK& indexVk, glm::vec2& rawCursorPos, glm::i
 
         ImGui::Checkbox("Read under mouse.", &readUnderMouse);
         if (readUnderMouse) {
-            indexVk.waitIdTexComplete(m);
-            id = indexVk.readIdTex(m->vkmod.windowDims, correctedCursorPos, m->vkmod.frameIdx);
-
             ImGui::SameLine();
-            ImGui::Text("Mouse id is: %d", id);
+            if (guiCapturedCursor) {
+                id = 0;
+                ImGui::Text("Mouse id is: %d (captured by ImGui)", id);
+            }else {
+                indexVk.waitIdTexComplete(m);
+                id = indexVk.readIdTex(m->vkmod.windowDims, correctedCursorPos, m->vkmod.frameIdx);
+                ImGui::Text("Mouse id is: %d", id);
+            }
+        }else {
+            id = 0;
         }
 
         ImGui::Checkbox("Plot indexes every frame.", &plotEveryFrame);
@@ -753,9 +759,10 @@ Modules* App::modules(){
     return m;
 }
 
-void App::cursorPosChanged(glm::vec2 rawCursorPos, glm::ivec2 correctedCursorPos){
-     this->rawCursorPos = rawCursorPos;
-     this->correctedCursorPos = correctedCursorPos;
+void App::cursorPosChanged(glm::vec2 rawCursorPos, glm::ivec2 correctedCursorPos, bool guiCapturedCursor){
+    this->guiCapturedCursor = guiCapturedCursor;
+    this->rawCursorPos = rawCursorPos;
+    this->correctedCursorPos = correctedCursorPos;
 }
 
 void App::printApiData(){
@@ -831,7 +838,7 @@ void App::Play(){
         pollEvents();
 
         m->guimod.beginFrame();
-        guiVk.update(m, indexVk, rawCursorPos, correctedCursorPos, shaderData.id);
+        guiVk.update(m, indexVk, rawCursorPos, correctedCursorPos, guiCapturedCursor, shaderData.id);
         m->guimod.endFrame();
 
         updateAppLogic();

@@ -13,6 +13,7 @@ class ImGuiModule{
         // fields
         ImGui_ImplVulkan_InitInfo initInfo = {};
         VkDescriptorPool pool = {VK_NULL_HANDLE};
+        ImGuiIO* io = nullptr;
 
         // functions
         void Init(GLFWModule &glfw, VkModule &vk, const std::string& workingPath);
