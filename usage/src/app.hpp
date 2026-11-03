@@ -3,6 +3,7 @@
 
 #include <glm/ext/vector_float2.hpp>
 #include <glm/ext/vector_int2.hpp>
+#include <string>
 #include <vector>
 #include <vulkan/vulkan_core.h>
 #include <GLFW/glfw3.h>
@@ -104,7 +105,7 @@ class DuckVk{
         void InitPipeline(VkModule& vkmod, IndexVK& indexVk, ResourceOwners& resources);
 };
 
-class GuiVk{
+class AppGui{
     public:
         bool shown = true;
         bool plotEveryFrame = false;
@@ -113,7 +114,6 @@ class GuiVk{
         std::vector<uint32_t> ids;
         glm::ivec2 iddim;
 
-        void update(Modules* m, IndexVK& indexVk, glm::vec2& rawCursorPos, glm::ivec2& correctedCursorPos, bool guiCapturedCursor, uint32_t& id, std::vector<int>& pressedKeys, std::vector<int>& releasedKeys);
         void fillIds(VkModule& vkmod, StagingBuffer& idbuf);
 };
 
@@ -143,7 +143,7 @@ class App{
         DuckVk duckVk;
 
         // Gui rendering resources
-        GuiVk guiVk;
+        AppGui gui;
 
         // Command recording helpers
         CommandRecorders cmds;
@@ -153,6 +153,7 @@ class App{
 
         void updateShaderData();
         void pollEvents();
+        void updateAppGui();
         void updateAppLogic();
 
         bool updateSwapchain = false;
@@ -160,10 +161,10 @@ class App{
 
         glm::vec3 camPos = { 0.0f, 0.0f, -6.0f };
         std::array<glm::vec3, 3> objectRotations = {};
+
         glm::vec2 rawCursorPos = {};
         glm::ivec2 correctedCursorPos = {};
         bool guiCapturedCursor = false;
-        std::vector<int> pressedKeys;
-        std::vector<int> releasedKeys;
 
+        std::vector<std::string> keys;
 };

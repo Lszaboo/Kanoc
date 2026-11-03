@@ -664,79 +664,7 @@ void DuckVk::EndRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, S
 }
 
 
-
-void GuiVk::update(Modules* m, IndexVK& indexVk, glm::vec2& rawCursorPos, glm::ivec2& correctedCursorPos, bool guiCapturedCursor,  uint32_t& id,  std::vector<int>& pressedKeys, std::vector<int>& releasedKeys){
-    if (ImGui::Begin("Demo", &shown)){
-        ImGui::Text("A demo window.");
-
-        ImGui::Text("Resolution: %d x %d", m->vkmod.windowDims.x, m->vkmod.windowDims.y);
-        ImGui::Text("Raw cursor pos: (%.2f;%.2f)", rawCursorPos.x, rawCursorPos.y);
-        ImGui::Text("Corrected cursor pos: (%2d;%d)", correctedCursorPos.x, correctedCursorPos.y);
-
-        ImGui::Checkbox("Read under mouse.", &readUnderMouse);
-        if (readUnderMouse) {
-            ImGui::SameLine();
-            if (guiCapturedCursor) {
-                id = 0;
-                ImGui::Text("Mouse id is: %d (captured by ImGui)", id);
-            }else {
-                indexVk.waitIdTexComplete(m);
-                id = indexVk.readIdTex(m->vkmod.windowDims, correctedCursorPos, m->vkmod.frameIdx);
-                ImGui::Text("Mouse id is: %d", id);
-            }
-        }else {
-            id = 0;
-        }
-
-        ImGui::Checkbox("Plot indexes every frame.", &plotEveryFrame);
-        if (plotEveryFrame) {
-            indexVk.waitIdTexComplete(m);
-            fillIds(m->vkmod, *indexVk.idbufs[VkModule::previousFrameIdx(m->vkmod.frameIdx)].resource);
-        }else{
-            ImGui::SameLine();
-            if (ImGui::Button("Wait for indexes...")) {
-                indexVk.waitIdTexComplete(m);
-                fillIds(m->vkmod, *indexVk.idbufs[VkModule::previousFrameIdx(m->vkmod.frameIdx)].resource);
-            }
-        }
-
-        if (!ids.empty()) {
-            ImGui::Text("iddim: %d x %d", iddim.x, iddim.y);
-            if (ImPlot::BeginPlot("ids plot", ImVec2(static_cast<float>(iddim.x)*5,static_cast<float>(iddim.y)*5), ImPlotFlags_NoInputs)) {
-                ImPlot::PlotHeatmap(
-                    "ids",
-                    ids.data(), iddim.y, iddim.x,
-                    0,
-                    0,
-                    nullptr
-                );
-                ImPlot::EndPlot();
-            }
-        }
-
-
-        if(ImGui::BeginListBox("Presses")){
-            for (auto& key : pressedKeys) {
-                ImGui::Text("%d", key);
-            }
-            ImGui::EndListBox();
-        }
-        if(ImGui::BeginListBox("Releases")){
-            for (auto& key : releasedKeys) {
-                ImGui::Text("%d", key);
-            }
-            ImGui::EndListBox();
-        }
-        if (ImGui::Button("Clear presses and releases!")){
-            pressedKeys.clear();
-            releasedKeys.clear();
-        }
-
-    }
-    ImGui::End();
-}
-
-void GuiVk::fillIds(VkModule& vkmod, StagingBuffer& idbuf){
+void AppGui::fillIds(VkModule& vkmod, StagingBuffer& idbuf){
     //int itemnum = vkmod.windowSize.x*vkmod.windowSize.y;
     //ids.resize(itemnum);
     //memcpy(ids.data(), static_cast<uint32_t*>(idbuf.buf.allocationInfo.pMappedData), itemnum*sizeof(uint32_t));
@@ -755,7 +683,6 @@ void GuiVk::fillIds(VkModule& vkmod, StagingBuffer& idbuf){
         }
     }
 }
-
 
 
 void App::Init(Modules* modules){
@@ -784,11 +711,13 @@ void App::cursorPosChanged(glm::vec2 rawCursorPos, glm::ivec2 correctedCursorPos
 }
 
 void App::keyPressed(int key){
-    pressedKeys.push_back(key);
+    std::string keystr = std::to_string(m->time) + " pressed: " + std::to_string(key);
+    keys.push_back(keystr);
 }
 
 void App::keyReleased(int key){
-    releasedKeys.push_back(key);
+    std::string keystr = std::to_string(m->time) + " released: " + std::to_string(key);
+    keys.push_back(keystr);
 }
 
 void App::printApiData(){
@@ -821,6 +750,70 @@ void App::updateShaderData(){
 
 void App::pollEvents(){
     glfwPollEvents();
+}
+
+void App::updateAppGui(){
+    if (ImGui::Begin("Demo", &gui.shown)){
+        ImGui::Text("A demo window.");
+
+        ImGui::Text("Resolution: %d x %d", m->vkmod.windowDims.x, m->vkmod.windowDims.y);
+        ImGui::Text("Raw cursor pos: (%.2f;%.2f)", rawCursorPos.x, rawCursorPos.y);
+        ImGui::Text("Corrected cursor pos: (%2d;%d)", correctedCursorPos.x, correctedCursorPos.y);
+
+        ImGui::Checkbox("Read under mouse.", &gui.readUnderMouse);
+        if (gui.readUnderMouse) {
+            ImGui::SameLine();
+            if (guiCapturedCursor) {
+                shaderData.id = 0;
+                ImGui::Text("Mouse id is: %d (captured by ImGui)", shaderData.id);
+            }else {
+                indexVk.waitIdTexComplete(m);
+                shaderData.id = indexVk.readIdTex(m->vkmod.windowDims, correctedCursorPos, m->vkmod.frameIdx);
+                ImGui::Text("Mouse id is: %d", shaderData.id);
+            }
+        }else {
+            shaderData.id = 0;
+        }
+
+        ImGui::Checkbox("Plot indexes every frame.", &gui.plotEveryFrame);
+        if (gui.plotEveryFrame) {
+            indexVk.waitIdTexComplete(m);
+            gui.fillIds(m->vkmod, *indexVk.idbufs[VkModule::previousFrameIdx(m->vkmod.frameIdx)].resource);
+        }else{
+            ImGui::SameLine();
+            if (ImGui::Button("Wait for indexes...")) {
+                indexVk.waitIdTexComplete(m);
+                gui.fillIds(m->vkmod, *indexVk.idbufs[VkModule::previousFrameIdx(m->vkmod.frameIdx)].resource);
+            }
+        }
+
+        if (!gui.ids.empty()) {
+            ImGui::Text("iddim: %d x %d", gui.iddim.x, gui.iddim.y);
+            if (ImPlot::BeginPlot("ids plot", ImVec2(static_cast<float>(gui.iddim.x)*5,static_cast<float>(gui.iddim.y)*5), ImPlotFlags_NoInputs)) {
+                ImPlot::PlotHeatmap(
+                    "ids",
+                    gui.ids.data(), gui.iddim.y, gui.iddim.x,
+                    0,
+                    0,
+                    nullptr
+                );
+                ImPlot::EndPlot();
+            }
+        }
+
+        if(ImGui::BeginListBox("Presses")){
+            for (auto& key : keys) {
+                ImGui::Text("%s", key.c_str());
+            }
+            ImGui::SetScrollHereY(1.0f);
+            ImGui::EndListBox();
+        }
+        if (ImGui::Button("Clear presses and releases!")){
+            keys.clear();
+        }
+
+    }
+    ImGui::End();
 }
 
 void App::updateAppLogic(){
@@ -858,7 +851,7 @@ void App::Play(){
         pollEvents();
 
         m->guimod.beginFrame();
-        guiVk.update(m, indexVk, rawCursorPos, correctedCursorPos, guiCapturedCursor, shaderData.id, pressedKeys, releasedKeys);
+        updateAppGui();
         m->guimod.endFrame();
 
         updateAppLogic();
