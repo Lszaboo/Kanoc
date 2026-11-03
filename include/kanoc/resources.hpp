@@ -1,6 +1,6 @@
 #pragma once
 
-#include "kanoc/cmdhelpers.hpp"
+#include "kanoc/cmd_helpers.hpp"
 #include "kanoc/buffers.hpp"
 #include "kanoc/descriptors.hpp"
 #include "kanoc/devices.hpp"

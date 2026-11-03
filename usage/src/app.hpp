@@ -3,7 +3,6 @@
 
 #include <glm/ext/vector_float2.hpp>
 #include <glm/ext/vector_int2.hpp>
-#include <string>
 #include <vector>
 #include <vulkan/vulkan_core.h>
 #include <GLFW/glfw3.h>
@@ -11,8 +10,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
-
-#include "imgui.h"
 
 #include <vk_mem_alloc.h>
 
@@ -25,54 +22,14 @@
 
 #include "kanoc/namedresource.hpp"
 #include "kanoc/harness.hpp"
-#include "kanoc/chk.hpp"
 #include "kanoc/resources.hpp"
 #include "kanoc/buffers.hpp"
 #include "kanoc/descriptors.hpp"
-#include "kanoc/devices.hpp"
-#include "kanoc/imagebarriers.hpp"
 #include "kanoc/pipelines.hpp"
-#include "kanoc/shaders.hpp"
 #include "kanoc/textures.hpp"
-#include "kanoc/vkwrap.hpp"
-#include "kanoc/glfw_module.hpp"
 #include "kanoc/vk_module.hpp"
-#include "kanoc/imgui_module.hpp"
-
-struct CommandRecorders{
-    VkCommandBuffer cb = {VK_NULL_HANDLE};
-    ImageBarrierCommander ibc{};
-    DynamicRenderingCommander drc{};
-};
-
-class IndexVK{
-    public:
-        Named<DepthTexture*> depth; // Depth for the scene.
-        Named<SamplerTexture*> coltex; // Color Texture of the scene.
-        Named<SamplerTexture*> idtex; // Index of objects is rendered into this texture.
-        std::array<Named<StagingBuffer*>, VkModule::maxFramesInFlight> idbufs; // Downloads idtex pixels from GPU, and can be accessed via Host (CPU).
-        std::array<Named<VkFence>, VkModule::maxFramesInFlight> idfences; // Host (CPU) must wait on these fences for idtex Download into idbufs[i].
-
-        Named<VkShaderModule> combinerShader;
-        Named<VkDescriptorSetLayout> combinerDescriptorLayout;
-        Named<Descriptors*> combinerDescriptors;
-        Named<GraphicsPipeline*> combinerPipeline;
-
-        void Init(Modules* m, ResourceOwners& resources);
-        void Resize(VkModule& vkmod);
-
-        void waitIdTexComplete(Modules* m);
-        uint32_t readIdTex(glm::ivec2 windowSize, glm::ivec2 mouseCoord, uint32_t frameIndex);
-
-        void BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, uint32_t& nextsscimage, SurfaceSwapChain& ssc, DepthTexture& sscdepth, uint32_t& frameIndex);
-        void RecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, uint32_t& nextsscimage, SurfaceSwapChain& ssc, DepthTexture& sscdepth);
-        void EndRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, uint32_t& nextsscimage, SurfaceSwapChain& ssc, DepthTexture& sscdepth);
-
-
-    protected:
-        void InitDescriptors(VkModule& vkmod, ResourceOwners& resources);
-        void InitCombinerPipeline(VkModule& vkmod, ResourceOwners& resources);
-};
+#include "kanoc/cmdrecorders.hpp"
+#include "kanoc/indexvk.hpp"
 
 class DuckVk{
     public:
@@ -166,5 +123,7 @@ class App{
         glm::ivec2 correctedCursorPos = {};
         bool guiCapturedCursor = false;
 
-        std::vector<std::string> keys;
+        std::vector<int> keys;
+        std::vector<double> keyTimes;
+        std::vector<bool> keysPressedOrReleased;
 };

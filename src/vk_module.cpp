@@ -17,7 +17,7 @@
 #include <string>
 #include <iostream>
 
-#include "kanoc/cmdhelpers.hpp"
+#include "kanoc/cmd_helpers.hpp"
 #include "kanoc/debug.hpp"
 #include "kanoc/dynamicrendering.hpp"
 #include "kanoc/imagebarriers.hpp"

@@ -1,5 +1,5 @@
 #pragma once
-#include "kanoc/cmdhelpers.hpp"
+#include "kanoc/cmd_helpers.hpp"
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <vulkan/vulkan_core.h>

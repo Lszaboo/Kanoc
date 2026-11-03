@@ -10,7 +10,7 @@
 #include <vulkan/vulkan_core.h>
 
 #include "kanoc/chk.hpp"
-#include "kanoc/cmdhelpers.hpp"
+#include "kanoc/cmd_helpers.hpp"
 #include "kanoc/devices.hpp"
 #include "kanoc/buffers.hpp"
 #include "kanoc/cmdbufs.hpp"

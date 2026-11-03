@@ -12,7 +12,7 @@
 #include <vector>
 #include <iostream>
 
-#include "kanoc/cmdhelpers.hpp"
+#include "kanoc/cmd_helpers.hpp"
 #include "kanoc/devices.hpp"
 
 class GLFWModule{
