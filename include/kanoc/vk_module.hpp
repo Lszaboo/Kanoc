@@ -55,6 +55,9 @@ class VkModule{
 
         uint32_t frameIdx = 0;
         void updateFrameIdx();
+
+        uint32_t nextSSCImageIdx = 0;
+
         std::array<VkCommandBuffer, maxFramesInFlight> frameCommandBuffers; // Commands are recorded into this buffer.
         std::array<VkFence, maxFramesInFlight> frameFinishedFences; // Is rendering finished for this frame-in-flight?
 
@@ -80,13 +83,13 @@ class VkModule{
         void printDevices(std::vector<VkPhysicalDevice> &pdevices, uint32_t &pdeviceCount);
 
         void updateFence();
-        bool nextSSCImage(uint32_t &imageIndex);
+        bool nextSSCImage();
 
         void BeginCBRecordingToSSC();
         void EndCBRecordingToSSC();
 
-        void updateSubmitCommandBuffer(uint32_t &imageIndex);
-        bool queuePresentImage(uint32_t &imageIndex);
+        void updateSubmitCommandBuffer();
+        bool queuePresentImage();
 
         void recreateSwapchains(GLFWModule &glfw);
 };

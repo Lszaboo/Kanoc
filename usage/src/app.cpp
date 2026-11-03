@@ -807,12 +807,6 @@ void App::printApiData(){
     std::cout << ImGui::GetVersion() << std::endl;
 }
 
-void App::updateDeltaTime(){
-    oldTime = time;
-    time = glfwGetTime();
-    deltaTime = time - oldTime;
-}
-
 void App::updateShaderData(){
     shaderData.projection = glm::perspective(glm::radians(45.0f), (float)m->vkmod.windowDims.x / (float)m->vkmod.windowDims.y, 0.1f, 32.0f);
     shaderData.view = glm::lookAt(camPos, glm::vec3(0.0), glm::vec3(0.0,1.0,0.0));
@@ -831,7 +825,7 @@ void App::pollEvents(){
 
 void App::updateAppLogic(){
     float y = -5.0;
-    camPos = glm::vec3(cos(time),0.0,sin(time)) * 15.0f + glm::vec3(0.0,y,0.0);
+    camPos = glm::vec3(cos(m->time),0.0,sin(m->time)) * 15.0f + glm::vec3(0.0,y,0.0);
 }
 
 void App::Play(){
@@ -841,9 +835,9 @@ void App::Play(){
     while (!glfwWindowShouldClose(m->glfwmod.window)){
         m->vkmod.updateFrameIdx();
         m->vkmod.updateFence(); // Wait for this frame fence and reset it
-        updateSwapchain |= m->glfwmod.setWindowDimensionsDiffer(m->vkmod.windowDims);
+        updateSwapchain |= m->glfwmod.setWindowDimensionsIfDiffer(m->vkmod.windowDims);
         if (!updateSwapchain) { // Could be done with short-circuit or as well, but for safety expliciticy was chosen.
-            updateSwapchain |= m->vkmod.nextSSCImage(imageIndex); // Get next ssc image.
+            updateSwapchain |= m->vkmod.nextSSCImage(); // Get next ssc image.
         }
 
         while (updateSwapchain) {
@@ -853,13 +847,13 @@ void App::Play(){
             m->guimod.recreateImGui(m->vkmod);
             indexVk.Resize(m->vkmod);
 
-            updateSwapchain = m->glfwmod.setWindowDimensionsDiffer(m->vkmod.windowDims);
+            updateSwapchain = m->glfwmod.setWindowDimensionsIfDiffer(m->vkmod.windowDims);
             if (!updateSwapchain) { // Could be done with short-circuit or as well, but for safety expliciticy was chosen.
-                updateSwapchain |= m->vkmod.nextSSCImage(imageIndex);
+                updateSwapchain |= m->vkmod.nextSSCImage();
             }
         }
 
-        updateDeltaTime();
+        m->updateDeltaTime();
 
         pollEvents();
 
@@ -878,13 +872,13 @@ void App::Play(){
         duckVk.RecordCommands(cmds, m->vkmod.windowDims, m->vkmod.frameIdx);
         duckVk.EndRecordCommands(cmds, m->vkmod.windowDims, *indexVk.coltex.resource, *indexVk.idtex.resource);
 
-        indexVk.BeginRecordCommands(cmds, m->vkmod.windowDims, imageIndex, m->vkmod.ssc, m->vkmod.ssc.depth, m->vkmod.frameIdx);
-        indexVk.RecordCommands(cmds, m->vkmod.windowDims, imageIndex, m->vkmod.ssc, m->vkmod.ssc.depth);
+        indexVk.BeginRecordCommands(cmds, m->vkmod.windowDims, m->vkmod.nextSSCImageIdx, m->vkmod.ssc, m->vkmod.ssc.depth, m->vkmod.frameIdx);
+        indexVk.RecordCommands(cmds, m->vkmod.windowDims, m->vkmod.nextSSCImageIdx, m->vkmod.ssc, m->vkmod.ssc.depth);
         m->guimod.RecordRenderCommands(m->vkmod.frameIdx, m->vkmod);
-        indexVk.EndRecordCommands(cmds, m->vkmod.windowDims, imageIndex, m->vkmod.ssc, m->vkmod.ssc.depth);
+        indexVk.EndRecordCommands(cmds, m->vkmod.windowDims, m->vkmod.nextSSCImageIdx, m->vkmod.ssc, m->vkmod.ssc.depth);
 
         m->vkmod.EndCBRecordingToSSC();
-        m->vkmod.updateSubmitCommandBuffer(imageIndex);
-        updateSwapchain = m->vkmod.queuePresentImage(imageIndex); // Queues  Resets updateSwapchain.
+        m->vkmod.updateSubmitCommandBuffer();
+        updateSwapchain = m->vkmod.queuePresentImage(); // Queues  Resets updateSwapchain.
     }
 }

@@ -303,7 +303,7 @@ void VkModule::updateFence(){
  *  - The imagindex parameter will index the next ssc image.
  *  - The return of the function is true if the swapchain needs recreation.
  */
-bool VkModule::nextSSCImage(uint32_t &imageIndex){
+bool VkModule::nextSSCImage(){
     // give index of next swapchain image
     // also signals semaphore when image is ready
     /*
@@ -325,7 +325,7 @@ bool VkModule::nextSSCImage(uint32_t &imageIndex){
      * The reuse of presentation resources should rely on vkAcquireNextImageKHR
      * or additional vk.extensions (will be mentioned at the end of this article), rather than on vkQueueSubmit fences.
      */
-    VkResult result = vkAcquireNextImageKHR(vk.ldevice.handle, ssc.swapchain, UINT64_MAX, ssc.imageAcquiredSemaphores[frameIdx], VK_NULL_HANDLE, &imageIndex);
+    VkResult result = vkAcquireNextImageKHR(vk.ldevice.handle, ssc.swapchain, UINT64_MAX, ssc.imageAcquiredSemaphores[frameIdx], VK_NULL_HANDLE, &nextSSCImageIdx);
 
     if (result < VK_SUCCESS) {
 		if (result == VK_ERROR_OUT_OF_DATE_KHR) {
@@ -355,7 +355,7 @@ void VkModule::EndCBRecordingToSSC(){
     vkEndCommandBuffer(frameCommandBuffers[frameIdx]);
 }
 
-void VkModule::updateSubmitCommandBuffer(uint32_t& imageIndex){
+void VkModule::updateSubmitCommandBuffer(){
     auto cb = frameCommandBuffers[frameIdx];
 
     // wait before color attachment for HKR image semaphore to be available
@@ -376,7 +376,7 @@ void VkModule::updateSubmitCommandBuffer(uint32_t& imageIndex){
     // imageIndex is the current KHR image
     VkSemaphoreSubmitInfo signalSemaphoreInfo{
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-        .semaphore = ssc.imageRenderCompleteSemaphores[imageIndex],
+        .semaphore = ssc.imageRenderCompleteSemaphores[nextSSCImageIdx],
         .stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
     };
 
@@ -392,14 +392,14 @@ void VkModule::updateSubmitCommandBuffer(uint32_t& imageIndex){
     chk(vkQueueSubmit2(queue.handle, 1, &submitInfo, frameFinishedFences[frameIdx]));
 }
 
-bool VkModule::queuePresentImage(uint32_t& imageIndex){
+bool VkModule::queuePresentImage(){
     VkPresentInfoKHR presentInfo{
         .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
         .waitSemaphoreCount = 1,
-        .pWaitSemaphores = &ssc.imageRenderCompleteSemaphores[imageIndex], // Wait for semaphore, indicating rendering to image is complete.
+        .pWaitSemaphores = &ssc.imageRenderCompleteSemaphores[nextSSCImageIdx], // Wait for semaphore, indicating rendering to image is complete.
         .swapchainCount = 1,
         .pSwapchains = &ssc.swapchain,
-        .pImageIndices = &imageIndex
+        .pImageIndices = &nextSSCImageIdx
     };
 
     VkResult result = vkQueuePresentKHR(queue.handle, &presentInfo);

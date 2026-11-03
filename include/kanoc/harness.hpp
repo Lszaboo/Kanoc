@@ -19,6 +19,10 @@ class Modules{
 
         // App related general variables
         std::string workingPath;
+        double time = 0.0;
+        double oldTime = 0.0;
+        double deltaTime = 0.0;
+
 
         template<typename AppT>
         void Init(AppT* app, const std::string& argvzero){
@@ -39,6 +43,12 @@ class Modules{
             guimod.Destroy(vkmod);
             vkmod.Destroy();
             glfwmod.Destroy();
+        }
+
+        void updateDeltaTime(){
+            oldTime = time;
+            time = glfwGetTime();
+            deltaTime = time - oldTime;
         }
 
     protected:

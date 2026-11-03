@@ -53,7 +53,7 @@ class GLFWModule{
             return  wsize;
         }
 
-        bool setWindowDimensionsDiffer(glm::ivec2& currWindowDimensions){
+        bool setWindowDimensionsIfDiffer(glm::ivec2& currWindowDimensions){
             glm::ivec2 glfwDimensions = getWindowDimension();
 
             if (currWindowDimensions != glfwDimensions) {

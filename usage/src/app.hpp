@@ -151,20 +151,15 @@ class App{
         // functions
         void printApiData();
 
-        void updateDeltaTime();
         void updateShaderData();
         void pollEvents();
         void updateAppLogic();
 
-        double time = 0.0;
-        double oldTime = 0.0;
-        double deltaTime = 0.0;
-
-        uint32_t imageIndex = 0;
         bool updateSwapchain = false;
         DuckVk::Uniforms shaderData = {};
+
         glm::vec3 camPos = { 0.0f, 0.0f, -6.0f };
-        glm::vec3 objectRotations[3] = {};
+        std::array<glm::vec3, 3> objectRotations = {};
         glm::vec2 rawCursorPos = {};
         glm::ivec2 correctedCursorPos = {};
         bool guiCapturedCursor = false;
