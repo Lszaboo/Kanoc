@@ -113,7 +113,7 @@ class GuiVk{
         std::vector<uint32_t> ids;
         glm::ivec2 iddim;
 
-        void update(Modules* m, IndexVK& indexVk, glm::vec2& rawCursorPos, glm::ivec2& correctedCursorPos, bool guiCapturedCursor, uint32_t& id);
+        void update(Modules* m, IndexVK& indexVk, glm::vec2& rawCursorPos, glm::ivec2& correctedCursorPos, bool guiCapturedCursor, uint32_t& id, std::vector<int>& pressedKeys, std::vector<int>& releasedKeys);
         void fillIds(VkModule& vkmod, StagingBuffer& idbuf);
 };
 
@@ -126,7 +126,8 @@ class App{
 
         Modules* modules();
         void cursorPosChanged(glm::vec2 rawCursorPos, glm::ivec2 correctedCursorPos, bool guiCapturedCursor);
-
+        void keyPressed(int key);
+        void keyReleased(int key);
 
     protected:
         // Kanoc harness
@@ -167,5 +168,7 @@ class App{
         glm::vec2 rawCursorPos = {};
         glm::ivec2 correctedCursorPos = {};
         bool guiCapturedCursor = false;
+        std::vector<int> pressedKeys;
+        std::vector<int> releasedKeys;
 
 };

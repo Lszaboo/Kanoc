@@ -22,7 +22,8 @@ class GLFWModule{
         template<typename AppT>
         void Init(
             AppT* app,
-            GLFWcursorposfun cursorfun
+            GLFWcursorposfun cursorfun,
+            GLFWkeyfun keyfun
         ){
             glfwInit();
             glfwWindowHint( GLFW_CLIENT_API, GLFW_NO_API );
@@ -31,6 +32,7 @@ class GLFWModule{
 
             glfwSetWindowUserPointer(window, app);
             glfwSetCursorPosCallback(window, cursorfun);
+            glfwSetKeyCallback(window, keyfun);
         }
 
         void Destroy(){

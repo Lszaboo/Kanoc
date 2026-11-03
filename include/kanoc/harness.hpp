@@ -27,7 +27,8 @@ class Modules{
 
             glfwmod.Init(
                 app,
-                Modules::cursorPosCallback<AppT>
+                Modules::cursorCallback<AppT>,
+                Modules::keyCallback<AppT>
             );
 
             vkmod.Init(glfwmod);
@@ -42,7 +43,7 @@ class Modules{
 
     protected:
         template<typename AppT>
-        static void cursorPosCallback(GLFWwindow *window, double xpos, double ypos){
+        static void cursorCallback(GLFWwindow *window, double xpos, double ypos){
             auto app = static_cast<AppT*>(glfwGetWindowUserPointer(window));
             Modules* m = app->modules();
 
@@ -50,6 +51,17 @@ class Modules{
             glm::ivec2 correctedCursorPos = m->glfwmod.getCorrectedCursorPos(m->vkmod.windowDims, rawCursorPos);
 
             app->cursorPosChanged(rawCursorPos, correctedCursorPos, m->guimod.io->WantCaptureMouse);
+        }
+
+        template<typename AppT>
+        static void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods){
+            auto app = static_cast<AppT*>(glfwGetWindowUserPointer(window));
+
+            if (action == GLFW_PRESS){
+                app->keyPressed(key);
+            }else if (action == GLFW_RELEASE) {
+                app->keyReleased(key);
+            }
         }
 };
 

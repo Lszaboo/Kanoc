@@ -665,7 +665,7 @@ void DuckVk::EndRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, S
 
 
 
-void GuiVk::update(Modules* m, IndexVK& indexVk, glm::vec2& rawCursorPos, glm::ivec2& correctedCursorPos, bool guiCapturedCursor,  uint32_t& id){
+void GuiVk::update(Modules* m, IndexVK& indexVk, glm::vec2& rawCursorPos, glm::ivec2& correctedCursorPos, bool guiCapturedCursor,  uint32_t& id,  std::vector<int>& pressedKeys, std::vector<int>& releasedKeys){
     if (ImGui::Begin("Demo", &shown)){
         ImGui::Text("A demo window.");
 
@@ -712,6 +712,24 @@ void GuiVk::update(Modules* m, IndexVK& indexVk, glm::vec2& rawCursorPos, glm::i
                 );
                 ImPlot::EndPlot();
             }
+        }
+
+
+        if(ImGui::BeginListBox("Presses")){
+            for (auto& key : pressedKeys) {
+                ImGui::Text("%d", key);
+            }
+            ImGui::EndListBox();
+        }
+        if(ImGui::BeginListBox("Releases")){
+            for (auto& key : releasedKeys) {
+                ImGui::Text("%d", key);
+            }
+            ImGui::EndListBox();
+        }
+        if (ImGui::Button("Clear presses and releases!")){
+            pressedKeys.clear();
+            releasedKeys.clear();
         }
 
     }
@@ -763,6 +781,14 @@ void App::cursorPosChanged(glm::vec2 rawCursorPos, glm::ivec2 correctedCursorPos
     this->guiCapturedCursor = guiCapturedCursor;
     this->rawCursorPos = rawCursorPos;
     this->correctedCursorPos = correctedCursorPos;
+}
+
+void App::keyPressed(int key){
+    pressedKeys.push_back(key);
+}
+
+void App::keyReleased(int key){
+    releasedKeys.push_back(key);
 }
 
 void App::printApiData(){
@@ -838,7 +864,7 @@ void App::Play(){
         pollEvents();
 
         m->guimod.beginFrame();
-        guiVk.update(m, indexVk, rawCursorPos, correctedCursorPos, guiCapturedCursor, shaderData.id);
+        guiVk.update(m, indexVk, rawCursorPos, correctedCursorPos, guiCapturedCursor, shaderData.id, pressedKeys, releasedKeys);
         m->guimod.endFrame();
 
         updateAppLogic();
