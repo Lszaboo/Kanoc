@@ -32,6 +32,7 @@ class Modules{
             glfwmod.Init(
                 app,
                 Modules::cursorCallback<AppT>,
+                Modules::cursorClickCallback<AppT>,
                 Modules::keyCallback<AppT>
             );
 
@@ -61,6 +62,18 @@ class Modules{
             glm::ivec2 correctedCursorPos = m->glfwmod.getCorrectedCursorPos(m->vkmod.windowDims, rawCursorPos);
 
             app->cursorPosChanged(rawCursorPos, correctedCursorPos, m->guimod.io->WantCaptureMouse);
+        }
+
+        template<typename AppT>
+        static void cursorClickCallback(GLFWwindow* window, int button, int action, int mods)
+        {
+            auto app = static_cast<AppT*>(glfwGetWindowUserPointer(window));
+
+            if (action == GLFW_PRESS){
+                app->cursorButtonPressed(button);
+            }else if (action == GLFW_RELEASE) {
+                app->cursorButtonReleased(button);
+            }
         }
 
         template<typename AppT>

@@ -22,7 +22,8 @@ class GLFWModule{
         template<typename AppT>
         void Init(
             AppT* app,
-            GLFWcursorposfun cursorfun,
+            GLFWcursorposfun cursormovefun,
+            GLFWmousebuttonfun cursorbuttonfun,
             GLFWkeyfun keyfun
         ){
             glfwInit();
@@ -31,7 +32,8 @@ class GLFWModule{
             assert(window);
 
             glfwSetWindowUserPointer(window, app);
-            glfwSetCursorPosCallback(window, cursorfun);
+            glfwSetCursorPosCallback(window, cursormovefun);
+            glfwSetMouseButtonCallback(window, cursorbuttonfun);
             glfwSetKeyCallback(window, keyfun);
         }
 
