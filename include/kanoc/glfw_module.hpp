@@ -34,6 +34,7 @@ class GLFWModule{
             if (glfwRawMouseMotionSupported()){
                 glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
             }else {
+                // Check disabled because of MacOS!
                 //CMD_PRINT("Raw cursor input not supported!");
                 //exit(1);
             }
