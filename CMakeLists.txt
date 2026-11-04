@@ -144,7 +144,7 @@ add_library(Kanoc::Kanoc ALIAS Kanoc)
 # Copy from SRCDIR/FLDR to TRGT/FLDR
 macro(kanoc_copy SRCDIR TRGT FLDR)
   add_custom_command(TARGET ${TRGT} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${SRCDIR}/${FLDR}
         $<TARGET_FILE_DIR:${TRGT}>/${FLDR}
 
