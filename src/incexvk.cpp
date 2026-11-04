@@ -41,6 +41,7 @@ void IndexVK::Init(Modules* m, ResourceOwners& resources){
     }
 
     VkShaderModule combiner_shader = {VK_NULL_HANDLE};
+    // FIXME: combiner.slang should be included with Kanoc.
     vkmod.slang.LoadAndCompile(vkmod.vk, m->workingPath + "/shaders/combiner.slang", combiner_shader);
     combinerShader = resources.shaders.Add("Index_Combiner_Shader", std::move(combiner_shader));
 
