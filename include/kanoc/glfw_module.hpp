@@ -12,8 +12,8 @@
 #include <vector>
 #include <iostream>
 
-#include "kanoc/cmd_helpers.hpp"
-#include "kanoc/devices.hpp"
+#include "cmd_helpers.hpp"
+#include "devices.hpp"
 
 class GLFWModule{
     public:
@@ -30,6 +30,13 @@ class GLFWModule{
             glfwWindowHint( GLFW_CLIENT_API, GLFW_NO_API );
             window = glfwCreateWindow( 1280, 720, "Vulkan window", nullptr, nullptr );
             assert(window);
+
+            if (glfwRawMouseMotionSupported()){
+                glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+            }else {
+                CMD_PRINT("Raw cursor input not supported!");
+                exit(1);
+            }
 
             glfwSetWindowUserPointer(window, app);
             glfwSetCursorPosCallback(window, cursormovefun);
@@ -75,6 +82,14 @@ class GLFWModule{
                 glm::ivec2(0,0),
                 windowDims
             );
+        }
+
+        void changeCursorVisinility(bool hidden){
+            if (hidden) {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            }else {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            }
         }
 
         void printWindowDimensions(){

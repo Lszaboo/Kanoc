@@ -31,7 +31,7 @@ class Modules{
 
             glfwmod.Init(
                 app,
-                Modules::cursorCallback<AppT>,
+                Modules::cursorPosCallback<AppT>,
                 Modules::cursorClickCallback<AppT>,
                 Modules::keyCallback<AppT>
             );
@@ -54,7 +54,7 @@ class Modules{
 
     protected:
         template<typename AppT>
-        static void cursorCallback(GLFWwindow *window, double xpos, double ypos){
+        static void cursorPosCallback(GLFWwindow *window, double xpos, double ypos){
             auto app = static_cast<AppT*>(glfwGetWindowUserPointer(window));
             Modules* m = app->modules();
 
