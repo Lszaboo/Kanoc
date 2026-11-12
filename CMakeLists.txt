@@ -25,7 +25,7 @@ find_package(slang CONFIG REQUIRED)
 
 include(FetchContent)
 
-macro(setup_imgui)
+macro(kanoc_setup_imgui)
   # pull imgui from github
   FetchContent_Declare(
       imgui
@@ -61,7 +61,7 @@ macro(setup_imgui)
   add_library(imgui::imgui ALIAS imgui)
 endmacro()
 
-macro(setup_implot)
+macro(kanoc_setup_implot)
   FetchContent_Declare(
     implot
     GIT_REPOSITORY https://github.com/epezent/implot.git
@@ -85,7 +85,7 @@ macro(setup_implot)
   add_library(implot::implot ALIAS implot)
 endmacro()
 
-macro(setup_vma)
+macro(kanoc_setup_vma)
   # pull VMA from github
   FetchContent_Declare(
       VulkanMemoryAllocator
@@ -95,7 +95,7 @@ macro(setup_vma)
   FetchContent_MakeAvailable(VulkanMemoryAllocator)
 endmacro()
 
-macro(setup_tinyobjloader)
+macro(kanoc_setup_tinyobjloader)
   # pull tinyobjloader from github
   FetchContent_Declare(
       tinyobjloader
@@ -105,10 +105,21 @@ macro(setup_tinyobjloader)
   FetchContent_MakeAvailable(tinyobjloader)
 endmacro()
 
-setup_imgui()
-setup_implot()
-setup_vma()
-setup_tinyobjloader()
+macro(kanoc_setup_json)
+
+FetchContent_Declare(json
+    GIT_REPOSITORY https://github.com/nlohmann/json
+    GIT_TAG v3.12.0
+)
+FetchContent_MakeAvailable(json)
+
+endmacro()
+
+kanoc_setup_imgui()
+kanoc_setup_vma()
+kanoc_setup_tinyobjloader()
+kanoc_setup_implot()
+kanoc_setup_json()
 
 # Find library *.cpp files in src/
 file(GLOB_RECURSE SRC_FILES
@@ -131,11 +142,12 @@ target_link_libraries(Kanoc PUBLIC
     glm::glm
     glfw
     imgui::imgui
-    implot::implot
     GPUOpen::VulkanMemoryAllocator
     tinyobjloader
     ktx
     slang::slang
+    implot::implot
+    nlohmann_json::nlohmann_json
 )
 
 add_library(Kanoc::Kanoc ALIAS Kanoc)
@@ -160,3 +172,13 @@ function(kanoc_copy_all_to_build TRGT)
   # Copy fonts to target's build.
   kanoc_copy(${KANOC_DIR} ${TRGT} fonts)
 endfunction()
+
+macro(kanoc_shader_copy SRCDIR TRGT FLDR)
+  add_custom_target(ShaderCopy ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${SRCDIR}/${FLDR}
+        $<TARGET_FILE_DIR:${TRGT}>/${FLDR}
+
+    COMMENT "Copied from ${SRCDIR}/${FLDR} to ${TRGT}-${FLDR}!"
+  )
+endmacro()

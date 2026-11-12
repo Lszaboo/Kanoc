@@ -1,11 +1,20 @@
 #include "kanoc/imgui_module.hpp"
+#include "kanoc/cmd_helpers.hpp"
 #include "kanoc/vk_module.hpp"
 #include "kanoc/chk.hpp"
 #include "imgui.h"
 #include "implot.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
+#include "nlohmann/json_fwd.hpp"
+#include <cstddef>
+#include <fstream>
+#include <ostream>
+#include <sstream>
 #include <vulkan/vulkan_core.h>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 void ImGuiModule::Init(GLFWModule &glfw, VkModule &vk, const std::string& workingPath){
     IMGUI_CHECKVERSION();
@@ -44,6 +53,37 @@ void ImGuiModule::Init(GLFWModule &glfw, VkModule &vk, const std::string& workin
 
     std::string iconFontPath = workingPath + "/fonts/MaterialSymbolsRounded.ttf";
     iconFont = io->Fonts->AddFontFromFileTTF(iconFontPath.c_str(),26);
+
+    io->IniFilename = nullptr;
+
+    // FIXME: handle window scaling the gui.
+    glm::vec2 scale;
+    glfwGetWindowContentScale(glfw.window, &scale.x, &scale.y);
+    int fontscale = glm::ivec2(scale).x;
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.FontScaleDpi = 0.75;
+    style.ScaleAllSizes(0.75);
+
+    std::ifstream fi("kanoc_settings.json");
+    if (!fi.is_open()) {
+        fi.close();
+
+        json j = {};
+        j["imgui_ini"] = "";
+        std::string jsonStr = j.dump(4) + "\n";
+
+        std::ofstream fo("kanoc_settings.json");
+        fo << jsonStr;
+    }else{
+        std::stringstream sstream;
+        sstream << fi.rdbuf();
+        std::string jsonStr = sstream.str();
+        fi.close();
+
+        json j = json::parse(jsonStr);
+        std::string iniStr = j["imgui_ini"];
+        ImGui::LoadIniSettingsFromMemory(iniStr.c_str(), iniStr.size());
+    }
 }
 
 void ImGuiModule::initDesriptorPool(VkModule &vk){
@@ -72,6 +112,12 @@ void ImGuiModule::beginFrame(){
 
 void ImGuiModule::endFrame(){
     ImGui::PopFont();
+
+    // FIXME: add actual autosaving.
+    if (io->WantSaveIniSettings){
+        CMD_PRINT("Autoasaving...");
+        io->WantSaveIniSettings = false;
+    }
 }
 
 void ImGuiModule::RecordRenderCommands(uint32_t &frameIndex, VkModule &vk){
@@ -85,6 +131,21 @@ void ImGuiModule::Destroy(VkModule &vk){
 
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
+
+
+    CMD_PRINT("Saving settings...");
+
+    size_t saveStrSize = 0;
+    const char* saveStr = ImGui::SaveIniSettingsToMemory(&saveStrSize);
+
+    json j = {};
+    j["imgui_ini"] = std::string(saveStr, saveStrSize);
+    std::string jsonStr = j.dump(4) + "\n";
+
+    std::ofstream f("kanoc_settings.json");
+    f << jsonStr;
+    f.close();
+    io->WantSaveIniSettings = false;
 
     ImPlot::DestroyContext();
     ImGui::DestroyContext();

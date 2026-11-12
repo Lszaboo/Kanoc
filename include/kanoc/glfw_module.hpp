@@ -28,7 +28,7 @@ class GLFWModule{
         ){
             glfwInit();
             glfwWindowHint( GLFW_CLIENT_API, GLFW_NO_API );
-            window = glfwCreateWindow( 1280, 720, "Vulkan window", nullptr, nullptr );
+            window = glfwCreateWindow( 1280/1.75f, 720/1.75f, "Vulkan window", nullptr, nullptr );
             assert(window);
 
             if (glfwRawMouseMotionSupported()){
