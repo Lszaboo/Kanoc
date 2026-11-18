@@ -13,7 +13,7 @@
 #include <vector>
 #include <iostream>
 
-#include "devices.hpp"
+#include "kanoc/devices.hpp"
 #include "kanoc/jsonfile.hpp"
 
 class GLFWModule{
@@ -56,7 +56,7 @@ class GLFWModule{
 
         void Save(JSONFile &f){
             glm::ivec2 wsize;
-            glfwGetFramebufferSize(window, &wsize.x, &wsize.y);
+            glfwGetWindowSize(window, &wsize.x, &wsize.y);
 
             f.j["glfw"]["windowDims"]["x"] = wsize.x;
             f.j["glfw"]["windowDims"]["y"] = wsize.y;
