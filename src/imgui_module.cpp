@@ -23,7 +23,7 @@ void ImGuiModule::Init(GLFWModule &glfw, VkModule &vk, const std::string& workin
 
     io = &(ImGui::GetIO());
     style = &(ImGui::GetStyle());
-    ImGui::StyleColorsLight();
+    ImGui::StyleColorsClassic();
 
     initDesriptorPool(vk);
 

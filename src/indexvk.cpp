@@ -2,56 +2,28 @@
 
 #include "kanoc/chk.hpp"
 
-void IndexVK::Init(Modules* m, ResourceOwners& resources){
-    VkModule& vkmod = m->vkmod;
-    auto depth_texture = DepthTexture();
-    depth_texture.Init(vkmod.vk, vkmod.windowDims);
-    depth = resources.depthtextures.Add("Index_Depth_Texture", std::move(depth_texture));
-
-    auto color_texture = SamplerTexture();
-    color_texture.InitColorReadWrite(vkmod.vk, vkmod.windowDims);
-    coltex = resources.samplertextures.Add("Index_Color_texture", std::move(color_texture));
-
-    OneTimeCB cb;
-    ImageBarrierCommander ibc;
-    ibc.Add({
-        .srcStageMask = VK_PIPELINE_STAGE_2_NONE,
-        .srcAccessMask = VK_ACCESS_2_NONE,
-        .dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
-        .dstAccessMask = VK_ACCESS_2_SHADER_SAMPLED_READ_BIT,
-        .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-        .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        .image = coltex.resource->image,
-        .subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 } //{ .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT, .levelCount = 0, .layerCount = 1 }
-    });
-    cb.Begin(vkmod.vk, vkmod.commandPool);
-    ibc.RecordAndClearCommands(cb.handle);
-    cb.End(vkmod.vk, vkmod.queue);
-
+void IndexVK::InitIndexes(Modules *m, ResourceOwners &resources){
     auto index_texture = SamplerTexture();
-    index_texture.InitIDReadWrite(vkmod.vk, vkmod.windowDims);
+    index_texture.InitIDReadWrite(m->vkmod.vk, m->vkmod.windowDims);
     idtex = resources.samplertextures.Add("Index_Index_Texture", std::move(index_texture));
 
-    uint32_t idtexsize = static_cast<uint32_t>(vkmod.windowDims.x * vkmod.windowDims.y) * sizeof(uint32_t);
+    uint32_t idtexsize = static_cast<uint32_t>(m->vkmod.windowDims.x * m->vkmod.windowDims.y) * sizeof(uint32_t);
     for (int i = 0; i < VkModule::maxFramesInFlight; i++) {
         std::string name = "Index_Index_Buffer" + std::to_string(i);
-        idbufs[i] = resources.stagingbuffers.Add(name, StagingBuffer::BuildForDownload(vkmod.vk, idtexsize));
+        idbufs[i] = resources.stagingbuffers.Add(name, StagingBuffer::BuildForDownload(m->vkmod.vk, idtexsize));
         name = "Index_Index_Fence" + std::to_string(i);
-        idfences[i] = resources.fences.Add(name, BuildFence(vkmod.vk, {}));
+        idfences[i] = resources.fences.Add(name, BuildFence(m->vkmod.vk, {}));
     }
-
-    VkShaderModule combiner_shader = {VK_NULL_HANDLE};
-    // FIXME: combiner.slang should be included with Kanoc.
-    vkmod.slang.LoadAndCompile(vkmod.vk, m->workingPath + "/shaders/combiner.slang", combiner_shader);
-    combinerShader = resources.shaders.Add("Index_Combiner_Shader", std::move(combiner_shader));
-
-    InitDescriptors(vkmod, resources);
-
-    InitCombinerPipeline(vkmod, resources);
-
 }
 
-void IndexVK::InitDescriptors(VkModule& vkmod, ResourceOwners& resources){
+void IndexVK::InitShader(Modules* m, ResourceOwners& resources){
+    VkShaderModule combiner_shader = {VK_NULL_HANDLE};
+    // FIXME: combiner.slang should be included with Kanoc.
+    m->vkmod.slang.LoadAndCompile(m->vkmod.vk, m->workingPath + "/shaders/combiner.slang", combiner_shader);
+    combinerShader = resources.shaders.Add("Index_Combiner_Shader", std::move(combiner_shader));
+}
+
+void IndexVK::InitDescriptors(Modules* m, ResourceOwners& resources){
     DescriptorLayoutBuilder layoutBuilder{};
     layoutBuilder.Add(
         {
@@ -62,69 +34,48 @@ void IndexVK::InitDescriptors(VkModule& vkmod, ResourceOwners& resources){
         },
         0 // No flags needed.
     );
-    layoutBuilder.Add(
-        {
-            .binding = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .descriptorCount = 1,
-            .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT
-        },
-        0 // No flags needed.
-    );
-    combinerDescriptorLayout = resources.descriptorlayouts.Add("Index_Combiner_Descriptor_Layout", layoutBuilder.Build(vkmod.vk));
+    combinerDescriptorLayout = resources.descriptorlayouts.Add("Index_Combiner_Descriptor_Layout", layoutBuilder.Build(m->vkmod.vk));
 
     DescriptorPoolBuilder poolbuilder{};
-    poolbuilder.Add(
-        {
-            .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-            .descriptorCount = 2
-        }
-    );
-    combinerDescriptors = resources.descriptorpools.Add("Index_Combiner_Descriptors", {.pool = poolbuilder.Build(vkmod.vk, 1)});
+    poolbuilder.Add({
+        .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+        .descriptorCount = 1
+    });
+    combinerDescriptors = resources.descriptorpools.Add("Index_Combiner_Descriptors", {.pool = poolbuilder.Build(m->vkmod.vk, 1)});
 
     DescriptorSetAllocator setAllocator{};
     setAllocator.Add(
         combinerDescriptorLayout.resource,
         1 // Since it is not a Variable sized layout, Vulkan doesn't really care.
     );
-    setAllocator.Allocate(vkmod.vk, *combinerDescriptors.resource);
+    setAllocator.Allocate(m->vkmod.vk, *combinerDescriptors.resource);
 
     // Upload descriptor set data.
-    std::vector<VkDescriptorImageInfo> imageinfos = {
-        {
-            .sampler = coltex.resource->sampler,
-            .imageView = coltex.resource->view,
-            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-        },
-        {
-            .sampler = idtex.resource->sampler,
-            .imageView = idtex.resource->view,
-            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-        }
+    VkDescriptorImageInfo imageinfo = {
+        .sampler = idtex.resource->sampler,
+        .imageView = idtex.resource->view,
+        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
     };
-    VkWriteDescriptorSet writeDescSet1{
+    VkWriteDescriptorSet writeDescSet{
         .dstSet = combinerDescriptors.resource->sets[0],
         .dstBinding = 0,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, // Conform to the type at binding.
-        .pImageInfo = &imageinfos[0]
+        .pImageInfo = &imageinfo
     };
-    combinerDescriptors.resource->WriteSet(vkmod.vk, writeDescSet1);
-    VkWriteDescriptorSet writeDescSet2{
-        .dstSet = combinerDescriptors.resource->sets[0],
-        .dstBinding = 1,
-        .descriptorCount = 1,
-        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, // Conform to the type at binding.
-        .pImageInfo = &imageinfos[1]
-    };
-    combinerDescriptors.resource->WriteSet(vkmod.vk, writeDescSet2);
+    combinerDescriptors.resource->WriteSet(m->vkmod.vk, writeDescSet);
 }
 
-void IndexVK::InitCombinerPipeline(VkModule& vkmod, ResourceOwners& resources){
+void IndexVK::InitCombinerPipeline(Modules* m, ResourceOwners& resources, std::vector<VkDescriptorSetLayout>& descriptorLayouts){
     PipelineBuilder pb;
 
     // descriptors needed only.
     pb.defDescriptorLayouts.push_back(combinerDescriptorLayout.resource);
+
+    // Extend with user descriptors.
+    for (auto& descriptorLayout : descriptorLayouts) {
+        pb.defDescriptorLayouts.push_back(descriptorLayout);
+    }
 
     // triangle list drawing setup
     pb.defInputAssemblyCI = {
@@ -150,7 +101,7 @@ void IndexVK::InitCombinerPipeline(VkModule& vkmod, ResourceOwners& resources){
     pb.defDynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
 
     // color attachments
-    pb.defAttachmentFormats.push_back(vkmod.ssc.swapchainci.imageFormat);
+    pb.defAttachmentFormats.push_back(m->vkmod.ssc.swapchainci.imageFormat);
     pb.defAttachmentBlends.push_back(GraphicsPipeline::basicColorBlendAttachmentci());
 
     // depth stencil
@@ -159,19 +110,17 @@ void IndexVK::InitCombinerPipeline(VkModule& vkmod, ResourceOwners& resources){
         .depthWriteEnable = VK_TRUE,
         .depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL
     };
-    pb.defDepthFormat = vkmod.ssc.depth.imageci.format;
+    pb.defDepthFormat = m->vkmod.ssc.depth.imageci.format;
 
     // unused but needed line width and multisampling setup
     pb.defRasterizationCI = GraphicsPipeline::basicRasterizationci();
     pb.defMultiSampleCI = GraphicsPipeline::basicMultisampleci();
 
-    combinerPipeline = resources.pipelines.Add("Index_Combiner_Pipeline", pb.Build(vkmod.vk));
+    combinerPipeline = resources.pipelines.Add("Index_Combiner_Pipeline", pb.Build(m->vkmod.vk));
 }
 
 void IndexVK::Resize(VkModule& vkmod){
-    // Redo Depth and Color textures.
-    depth.resource->Resize(vkmod.vk, vkmod.windowDims);
-    coltex.resource->Resize(vkmod.vk, vkmod.windowDims);
+    // Redo id texture.
     idtex.resource->Resize(vkmod.vk, vkmod.windowDims);
 
     uint32_t idtexsize = static_cast<uint32_t>(vkmod.windowDims.x * vkmod.windowDims.y) * sizeof(uint32_t);
@@ -180,34 +129,19 @@ void IndexVK::Resize(VkModule& vkmod){
     }
 
     // Redo just the Descriptor Set, so that it points to the correct resources.
-    std::vector<VkDescriptorImageInfo> imageinfos = {
-        {
-            .sampler = coltex.resource->sampler,
-            .imageView = coltex.resource->view, // This now points to new view.
-            .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL
-        },
-        {
+    VkDescriptorImageInfo imageinfo = {
             .sampler = idtex.resource->sampler,
             .imageView = idtex.resource->view, // This now points to new view.
             .imageLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL
-        }
     };
-    VkWriteDescriptorSet writeDescSet1{
+    VkWriteDescriptorSet writeDescSet{
         .dstSet = combinerDescriptors.resource->sets[0], // Write to set 0, again.
         .dstBinding = 0, // The 0 bound descriptor in the set.
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, // Conform to the type at binding.
-        .pImageInfo = &imageinfos[0]
+        .pImageInfo = &imageinfo
     };
-    combinerDescriptors.resource->WriteSet(vkmod.vk, writeDescSet1);
-    VkWriteDescriptorSet writeDescSet2{
-        .dstSet = combinerDescriptors.resource->sets[0],
-        .dstBinding = 1, // The 1 bound descriptor in the set.
-        .descriptorCount = 1,
-        .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, // Conform to the type at binding.
-        .pImageInfo = &imageinfos[1]
-    };
-    combinerDescriptors.resource->WriteSet(vkmod.vk, writeDescSet2);
+    combinerDescriptors.resource->WriteSet(vkmod.vk, writeDescSet);
 }
 
 void IndexVK::waitIdTexComplete(Modules *m){
@@ -319,7 +253,7 @@ void IndexVK::BeginRecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize
 
 }
 
-void IndexVK::RecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, uint32_t& nextsscimage, SurfaceSwapChain& ssc, DepthTexture& sscdepth){
+void IndexVK::RecordBindCommands(CommandRecorders& cmds, glm::ivec2& windowSize, uint32_t& nextsscimage, SurfaceSwapChain& ssc, DepthTexture& sscdepth){
     VkViewport vp{
         .width = static_cast<float>(windowSize.x),
         .height = static_cast<float>(windowSize.y),
@@ -336,7 +270,9 @@ void IndexVK::RecordCommands(CommandRecorders& cmds, glm::ivec2& windowSize, uin
 
     // texture descriptors
     vkCmdBindDescriptorSets(cmds.cb, VK_PIPELINE_BIND_POINT_GRAPHICS, combinerPipeline.resource->layout, 0, 1, &combinerDescriptors.resource->sets[0], 0, nullptr);
+}
 
+void IndexVK::RecordDrawCommands(CommandRecorders& cmds, glm::ivec2& windowSize, uint32_t& nextsscimage, SurfaceSwapChain& ssc, DepthTexture& sscdepth){
     // draw
     vkCmdDraw(cmds.cb, 3, 1, 0, 0);
 }
