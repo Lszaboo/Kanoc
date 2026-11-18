@@ -2,6 +2,7 @@
 
 #include <GLFW/glfw3.h>
 
+#include <glm/ext/vector_float2.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -12,8 +13,8 @@
 #include <vector>
 #include <iostream>
 
-#include "cmd_helpers.hpp"
 #include "devices.hpp"
+#include "kanoc/jsonfile.hpp"
 
 class GLFWModule{
     public:
@@ -28,7 +29,7 @@ class GLFWModule{
         ){
             glfwInit();
             glfwWindowHint( GLFW_CLIENT_API, GLFW_NO_API );
-            window = glfwCreateWindow( 1280/1.75f, 720/1.75f, "Vulkan window", nullptr, nullptr );
+            window = glfwCreateWindow( 1280, 720, "Vulkan window", nullptr, nullptr );
             assert(window);
 
             if (glfwRawMouseMotionSupported()){
@@ -43,6 +44,22 @@ class GLFWModule{
             glfwSetCursorPosCallback(window, cursormovefun);
             glfwSetMouseButtonCallback(window, cursorbuttonfun);
             glfwSetKeyCallback(window, keyfun);
+        }
+
+        void Load(JSONFile &f){
+            if (f.existed) {
+                int windowDimsX = f.j["glfw"]["windowDims"]["x"];
+                int windowDimsY = f.j["glfw"]["windowDims"]["y"];
+                glfwSetWindowSize(window, windowDimsX, windowDimsY);
+            }
+        }
+
+        void Save(JSONFile &f){
+            glm::ivec2 wsize;
+            glfwGetFramebufferSize(window, &wsize.x, &wsize.y);
+
+            f.j["glfw"]["windowDims"]["x"] = wsize.x;
+            f.j["glfw"]["windowDims"]["y"] = wsize.y;
         }
 
         void Destroy(){

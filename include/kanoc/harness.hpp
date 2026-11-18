@@ -11,6 +11,7 @@
 #include <filesystem>
 #include <glm/ext/vector_float2.hpp>
 #include <glm/ext/vector_int2.hpp>
+#include <set>
 #include <string>
 #include <vector>
 #include <format>
@@ -49,6 +50,7 @@ class Modules{
                 Modules::cursorClickCallback<AppT>,
                 Modules::keyCallback<AppT>
             );
+            glfwmod.Load(settings);
 
             vkmod.Init(glfwmod);
 
@@ -62,6 +64,7 @@ class Modules{
 
             vkmod.Destroy();
 
+            glfwmod.Save(settings);
             glfwmod.Destroy();
 
             settings.Save("kanoc_settings.json");
