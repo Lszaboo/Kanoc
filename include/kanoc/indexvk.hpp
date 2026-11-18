@@ -15,7 +15,7 @@
 #include <ktxvulkan.h>
 
 #include "namedresource.hpp"
-#include "harness.hpp"
+#include "kanoc/harness.hpp"
 #include "resources.hpp"
 #include "buffers.hpp"
 #include "descriptors.hpp"

@@ -4,6 +4,7 @@
 #include <string>
 #include <vulkan/vulkan_core.h>
 #include "kanoc/glfw_module.hpp"
+#include "kanoc/jsonfile.hpp"
 #include "kanoc/vk_module.hpp"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
@@ -14,19 +15,26 @@ class ImGuiModule{
         ImGui_ImplVulkan_InitInfo initInfo = {};
         VkDescriptorPool pool = {VK_NULL_HANDLE};
         ImGuiIO* io = nullptr;
+        ImGuiStyle* style = nullptr;
 
         // functions
         void Init(GLFWModule &glfw, VkModule &vk, const std::string& workingPath);
         void initDesriptorPool(VkModule &vk);
+        void Load(JSONFile& f);
+
+        float getGuiScale();
+        void setGuiScale(float scale);
 
         void beginFrame();
         void endFrame();
         void RecordRenderCommands(uint32_t &frameIndex, VkModule &vk);
         void recreateImGui(VkModule &vk);
 
+        void Save(JSONFile& f);
         void Destroy(VkModule &vk);
 
     protected:
         ImFont* textFont;
         ImFont* iconFont;
+        float guiScale = 1.0;
 };

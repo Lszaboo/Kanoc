@@ -1,14 +1,19 @@
 #pragma once
 
+#include "imgui.h"
+#include "kanoc/cmd_helpers.hpp"
 #include "kanoc/glfw_module.hpp"
 #include "kanoc/imgui_module.hpp"
+#include "kanoc/jsonfile.hpp"
 #include "kanoc/vk_module.hpp"
 #include <GLFW/glfw3.h>
-#include <cstdint>
+#include <cstdio>
 #include <filesystem>
 #include <glm/ext/vector_float2.hpp>
 #include <glm/ext/vector_int2.hpp>
 #include <string>
+#include <vector>
+#include <format>
 
 class Modules{
     public:
@@ -16,6 +21,12 @@ class Modules{
         GLFWModule glfwmod;
         VkModule vkmod;
         ImGuiModule guimod;
+
+        // Settings related variables
+        JSONFile settings;
+        std::vector<float> settingsScaleOptions = {
+            0.5, 0.75, 1.0, 1.5, 2.0
+        };
 
         // App related general variables
         std::string workingPath;
@@ -29,6 +40,9 @@ class Modules{
             auto dir = std::filesystem::absolute(argvzero).parent_path();
             workingPath = dir.string();
 
+            settings.name = "Settings";
+            settings.Load("kanoc_settings.json");
+
             glfwmod.Init(
                 app,
                 Modules::cursorPosCallback<AppT>,
@@ -37,19 +51,46 @@ class Modules{
             );
 
             vkmod.Init(glfwmod);
+
             guimod.Init(glfwmod, vkmod, workingPath);
+            guimod.Load(settings);
         }
 
         void Destroy(){
+            guimod.Save(settings);
             guimod.Destroy(vkmod);
+
             vkmod.Destroy();
+
             glfwmod.Destroy();
+
+            settings.Save("kanoc_settings.json");
         }
 
         void updateDeltaTime(){
             oldTime = time;
             time = glfwGetTime();
             deltaTime = time - oldTime;
+        }
+
+        void updateSettingsGui(){
+            if (ImGui::Begin("Settings")) {
+                ImGui::Text("ImGui");
+                ImGui::Separator();
+
+                ImGui::Text("Set Scale:");
+                for (float& scale : settingsScaleOptions) {
+                    // FIXME: precalculate these strings.
+                    std::string buttonStr = std::format(
+                        "{0:.2f}x##SCALES", scale
+                    );
+                    ImGui::SameLine();
+                    if (ImGui::RadioButton(buttonStr.c_str(), scale == guimod.getGuiScale())) {
+                        guimod.setGuiScale(scale);
+                    }
+                }
+            }
+            ImGui::End();
         }
 
     protected:
