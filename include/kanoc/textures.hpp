@@ -27,7 +27,7 @@ class SamplerTexture {
         VkSampler sampler{ VK_NULL_HANDLE };
 
         void InitFromFile(FullDevice& vk, VkCommandPool& cbpool, GraphicsQueue& queue, std::string path);
-        void InitColorReadWrite(FullDevice& vk, glm::ivec2& size);
+        void InitColorReadWrite(FullDevice& vk, glm::ivec2& size, bool nearest=false);
         void InitIDReadWrite(FullDevice& vk, glm::ivec2& size);
         void Destroy(FullDevice& vk);
 

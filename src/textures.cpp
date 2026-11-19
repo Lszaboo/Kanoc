@@ -74,11 +74,11 @@ void SamplerTexture::InitFromFile(FullDevice& vk, VkCommandPool& cbpool, Graphic
     ktxTexture_Destroy(ktxTexture);
 }
 
-void SamplerTexture::InitColorReadWrite(FullDevice& vk, glm::ivec2& size){
+void SamplerTexture::InitColorReadWrite(FullDevice& vk, glm::ivec2& size, bool nearest){
     imageci = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
         .imageType = VK_IMAGE_TYPE_2D,
-        .format = VK_FORMAT_R8G8B8A8_UNORM,
+        .format = VK_FORMAT_R32G32B32A32_SFLOAT,
         .extent = {
             .width  = static_cast<uint32_t>(size.x),
             .height = static_cast<uint32_t>(size.y),
@@ -104,17 +104,31 @@ void SamplerTexture::InitColorReadWrite(FullDevice& vk, glm::ivec2& size){
     };
     createImageAndView(vk);
 
-    samplerci = {
-        .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
-        .magFilter = VK_FILTER_LINEAR,
-        .minFilter = VK_FILTER_LINEAR,
-        .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
-        .addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-        .addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-        .addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
-        .anisotropyEnable = VK_FALSE,
-        .maxLod = 0.0f,
-    };
+    if (nearest) {
+        samplerci = {
+            .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+            .magFilter = VK_FILTER_NEAREST,
+            .minFilter = VK_FILTER_NEAREST,
+            .mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
+            .addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+            .addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+            .addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+            .anisotropyEnable = VK_FALSE,
+            .maxLod = 0.0f,
+        };
+    }else{
+        samplerci = {
+            .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+            .magFilter = VK_FILTER_LINEAR,
+            .minFilter = VK_FILTER_LINEAR,
+            .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+            .addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+            .addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+            .addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE,
+            .anisotropyEnable = VK_FALSE,
+            .maxLod = 0.0f,
+        };
+    }
     createSampler(vk);
 }
 
